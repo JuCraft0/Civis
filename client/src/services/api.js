@@ -64,6 +64,11 @@ export const uploadPhoto = async (id, file, index = 0) => {
     return response.data;
 };
 
+export const deletePhoto = async (id, index) => {
+    const response = await api.delete(`/people/${id}/photo/${index}`);
+    return response.data;
+};
+
 export const searchByFace = async (file) => {
     const formData = new FormData();
     formData.append('photo', file);

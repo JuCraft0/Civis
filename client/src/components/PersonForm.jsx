@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { getGroups, getPeople } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, deletePhoto } from '../services/api';
 import HUDSelect from './HUDSelect';
 import { Calendar as CalendarIcon, Save, X, Users, Search, UserPlus, UserMinus, Plus, Image as ImageIcon, Upload, ChevronDown, Globe, Trash2, Scan } from 'lucide-react';
 import { analyzeFace } from '../services/api';
@@ -396,7 +396,16 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         }
     };
 
-    const handlePhotoDelete = (index) => {
+    const handlePhotoDelete = async (index) => {
+        // If editing an existing person, delete from server
+        if (initialData?.id) {
+            try {
+                await deletePhoto(initialData.id, index);
+            } catch (err) {
+                console.error("Failed to delete photo from server", err);
+            }
+        }
+
         setPhotoFiles(prev => {
             const newFiles = [...prev];
             newFiles[index] = null;

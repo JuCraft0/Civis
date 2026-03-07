@@ -249,6 +249,60 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     }
 });
 
+// Delete a specific photo by index
+router.delete('/:id/photo/:index', authenticateToken, requireEditor, async (req, res) => {
+    try {
+        const personId = req.params.id;
+        const index = parseInt(req.params.index);
+
+        const current = await get("SELECT * FROM people WHERE id = ?", [personId]);
+        if (!current) return res.status(404).json({ error: "Person not found" });
+
+        let photo_urls = [];
+        try {
+            photo_urls = current.photo_urls ? JSON.parse(current.photo_urls) : [];
+        } catch (e) { }
+
+        if (index < 0 || index >= photo_urls.length || !photo_urls[index]) {
+            return res.status(400).json({ error: "Photo not found at this index" });
+        }
+
+        // Delete the file
+        const photoPath = photo_urls[index];
+        const filepath = path.join(__dirname, '..', '..', photoPath);
+        if (fs.existsSync(filepath)) {
+            fs.unlinkSync(filepath);
+        }
+
+        // Remove from photo_urls array
+        photo_urls[index] = '';
+
+        // Reset primary photo_url if index 0 was deleted
+        const newPrimaryPhoto = (index === 0) ? '' : current.photo_url;
+
+        // Also handle face_descriptors (we should remove the one corresponding to this image if possible)
+        // Since we don't store 1:1 mapping perfectly, we'll clear all descriptors if it was the primary photo,
+        // or just keep the first 5 remains. 
+        // Better: Clear face descriptors and AI metadata if the MAIN photo is deleted.
+        let updateQuery = 'UPDATE people SET photo_urls = ?, photo_url = ?';
+        let params = [JSON.stringify(photo_urls), newPrimaryPhoto];
+
+        if (index === 0) {
+            updateQuery += ', face_descriptor = NULL, ai_metadata = NULL';
+        }
+
+        updateQuery += ' WHERE id = ?';
+        params.push(personId);
+
+        await run(updateQuery, params);
+
+        res.json({ message: "Photo deleted", photo_urls });
+    } catch (err) {
+        console.error("Delete photo error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.post('/:id/photo', authenticateToken, requireEditor, upload.single('photo'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: "No file provided" });
@@ -264,10 +318,18 @@ router.post('/:id/photo', authenticateToken, requireEditor, upload.single('photo
 
         const filepath = path.join(uploadsDir, filename);
 
-        await sharp(req.file.buffer)
-            .resize(800, 800, { fit: 'cover' })
-            .webp({ quality: 80 })
-            .toFile(filepath);
+        console.log(`Processing upload for Person ${personId}, Index ${index}. File: ${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})`);
+
+        try {
+            await sharp(req.file.buffer)
+                .rotate() // Automatic rotation based on EXIF
+                .resize(800, 800, { fit: 'cover' })
+                .webp({ quality: 80 })
+                .toFile(filepath);
+        } catch (sharpErr) {
+            console.error("Sharp Processing Error:", sharpErr);
+            return res.status(422).json({ error: "Das Bild konnte nicht verarbeitet werden. Eventuell ist die Datei beschädigt oder hat ein ungültiges Format." });
+        }
 
         // Process image with face recognition
         let ai_metadata = null;
