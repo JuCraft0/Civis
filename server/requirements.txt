@@ -1,0 +1,7 @@
+deepface
+tf-keras
+tensorflow-cpu
+fastapi
+uvicorn
+python-multipart
+numpy
