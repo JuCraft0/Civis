@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.server
+    container_name: civis-server
+    environment:
+      - NODE_ENV=production
+      - PORT=5005
+    ports:
+      - "5005:5005"
+    volumes:
+      # Mount the local database and uploads for persistence
+      - ./server/civis.db:/app/civis.db
+      - ./server/uploads:/app/uploads
+    restart: always
+
+  client:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.client
+    container_name: civis-client
+    ports:
+      - "10000:10000"
+    depends_on:
+      - server
+    restart: always
+
+volumes:
+  # Using host mounts for direct access to data
+  # Named volumes can be used for absolute persistence within Docker
+  civis-data:
+  civis-db:
