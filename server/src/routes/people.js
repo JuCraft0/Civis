@@ -173,7 +173,9 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
                 location = COALESCE(?, location),
                 photo_url = COALESCE(?, photo_url),
                 photo_urls = COALESCE(?, photo_urls),
-                online_profiles = COALESCE(?, online_profiles)
+                online_profiles = COALESCE(?, online_profiles),
+                face_descriptor = ?,
+                ai_metadata = ?
             WHERE id = ?
         `, [
             name !== undefined ? name : null,
@@ -187,6 +189,8 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
             photo_url !== undefined ? photo_url : null,
             photo_urls !== undefined ? JSON.stringify(photo_urls) : null,
             online_profiles !== undefined ? JSON.stringify(online_profiles) : null,
+            req.body.face_descriptor !== undefined ? req.body.face_descriptor : current.face_descriptor,
+            req.body.ai_metadata !== undefined ? req.body.ai_metadata : current.ai_metadata,
             personId
         ]);
 

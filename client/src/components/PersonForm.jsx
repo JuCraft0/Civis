@@ -492,6 +492,8 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         if (!activeModules.includes('photo')) {
             finalData.photo_url = '';
             finalData.photo_urls = [];
+            finalData.face_descriptor = null;
+            finalData.ai_metadata = null;
         }
 
         onSubmit({
