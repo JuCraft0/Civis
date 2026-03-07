@@ -1,5 +1,6 @@
 name: Build & Push Docker Images
 
+
 on:
   push:
     branches: [main]   # Läuft bei jedem Push auf main
@@ -9,6 +10,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      
+      - name: Debug - Secrets Check
+        run: |
+          # Zeigt "true" wenn das Secret gefunden wurde, sonst "false"
+          # Der echte Wert wird NIEMALS angezeigt, nur ob er vorhanden ist
+          echo "USERNAME gesetzt: ${{ secrets.DOCKER_USERNAME != '' }}"
+          echo "PASSWORD gesetzt: ${{ secrets.DOCKER_PASSWORD != '' }}"
 
       - name: Docker Hub Login
         uses: docker/login-action@v2
