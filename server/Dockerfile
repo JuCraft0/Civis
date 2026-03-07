@@ -31,11 +31,9 @@ RUN pip3 install --no-cache-dir -r requirements.txt --break-system-packages
 # Copy the rest of the server code
 COPY . .
 
-# Make startup script executable
-RUN chmod +x ./start.sh
 
 # Expose the API port
 EXPOSE 5005
 
 # Start both services using the start script
-CMD ["./start.sh"]
+
