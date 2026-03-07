@@ -166,9 +166,20 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
         let finalAiMetadata = req.body.ai_metadata !== undefined ? req.body.ai_metadata : current.ai_metadata;
 
         if (photo_url === '' || photo_url === null) {
-            console.log(`[Safety] Clearing AI data for person ${personId} because photo_url is empty`);
+            console.log(`[Safety] Clearing AI data and files for person ${personId} because photo_url is empty`);
             finalFaceDescriptor = null;
             finalAiMetadata = null;
+
+            // Also delete ALL physical files for this person
+            try {
+                const currentUrls = current.photo_urls ? JSON.parse(current.photo_urls) : [];
+                currentUrls.forEach(p => {
+                    if (p) {
+                        const filepath = path.join(__dirname, '..', '..', p);
+                        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+                    }
+                });
+            } catch (e) { console.error("Error deleting files on module clear", e); }
         }
 
         console.log(`[Update] Person ${personId}: photo_url="${photo_url}", face_descriptor is ${finalFaceDescriptor ? 'SET' : 'NULL'}`);
