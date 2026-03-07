@@ -11,7 +11,7 @@ const { processImage, calculateSimilarity } = require('../services/faceRecogniti
 const router = express.Router();
 
 const upload = multer({
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+    limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB limit
 });
 
 async function getFullPerson(personId) {
