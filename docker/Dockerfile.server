@@ -1,0 +1,33 @@
+# Use an official Node.js runtime as the base image
+FROM node:20-slim
+
+# Install dependencies for canvas and tfjs-node
+# Also including python3 and build-essential for node-gyp if needed
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3 \
+    libcairo2-dev \
+    libpango1.0-dev \
+    libjpeg-dev \
+    libgif-dev \
+    librsvg2-dev \
+    libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy package files first for better layer caching
+COPY server/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy the rest of the server code
+COPY server/ ./
+
+# Expose the API port
+EXPOSE 5005
+
+# Start the server
+CMD ["npm", "start"]

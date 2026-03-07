@@ -1,0 +1,27 @@
+# Dependencies
+node_modules
+client/node_modules
+server/node_modules
+
+# Build outputs
+client/dist
+server/dist
+
+# Local databases and uploads (Volumes handle these)
+server/uploads/*
+server/database.sqlite
+server/civis.db
+*.db
+*.sqlite
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
