@@ -161,6 +161,18 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
 
         const updatedGroupId = (group_id !== undefined) ? group_id : current.group_id;
 
+        // Safety: If the photo_url is cleared, we should also clear the face identification data
+        let finalFaceDescriptor = req.body.face_descriptor !== undefined ? req.body.face_descriptor : current.face_descriptor;
+        let finalAiMetadata = req.body.ai_metadata !== undefined ? req.body.ai_metadata : current.ai_metadata;
+
+        if (photo_url === '' || photo_url === null) {
+            console.log(`[Safety] Clearing AI data for person ${personId} because photo_url is empty`);
+            finalFaceDescriptor = null;
+            finalAiMetadata = null;
+        }
+
+        console.log(`[Update] Person ${personId}: photo_url="${photo_url}", face_descriptor is ${finalFaceDescriptor ? 'SET' : 'NULL'}`);
+
         await run(`
             UPDATE people SET 
                 name = COALESCE(?, name), 
@@ -189,8 +201,8 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
             photo_url !== undefined ? photo_url : null,
             photo_urls !== undefined ? JSON.stringify(photo_urls) : null,
             online_profiles !== undefined ? JSON.stringify(online_profiles) : null,
-            req.body.face_descriptor !== undefined ? req.body.face_descriptor : current.face_descriptor,
-            req.body.ai_metadata !== undefined ? req.body.ai_metadata : current.ai_metadata,
+            finalFaceDescriptor,
+            finalAiMetadata,
             personId
         ]);
 
