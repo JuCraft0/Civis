@@ -35,5 +35,5 @@ COPY . .
 # Expose the API port
 EXPOSE 5005
 
-# Start both services using the start script
+# Start the server (Empty as requested, handled externally or by start.sh in older versions)
 
