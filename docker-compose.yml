@@ -12,7 +12,7 @@ services:
     ports:
       - "5005:5005"
     volumes:
-      - /ZimaOS-HD/AppData/civis_Data/Fotos_Pes:/app/uploads
+      - /ZimaOS-HD/Media/Civis:/app/uploads
     restart: always
 
   client:
