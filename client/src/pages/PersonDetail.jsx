@@ -8,6 +8,44 @@ import Toast from '../components/Toast';
 import { getPerson, updatePerson, deletePerson, uploadPhoto } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
+
+const AuthenticatedImage = ({ src, alt, className }) => {
+    const [imageSrc, setImageSrc] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadImage = async () => {
+            try {
+                const token = sessionStorage.getItem('token');
+                const response = await axios.get(src, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob'
+                });
+                if (isMounted) {
+                    const url = URL.createObjectURL(response.data);
+                    setImageSrc(url);
+                }
+            } catch (error) {
+                console.error("Failed to load authenticated image", error);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        if (src) loadImage();
+        return () => {
+            isMounted = false;
+            if (imageSrc) URL.revokeObjectURL(imageSrc);
+        };
+    }, [src]);
+
+    if (loading) return <div className={`${className} bg-white/5 animate-pulse`} />;
+    if (!imageSrc) return <div className={`${className} bg-white/5 flex items-center justify-center`}><ImageIcon size={24} /></div>;
+
+    return <img src={imageSrc} alt={alt} className={className} />;
+};
 
 const PersonDetail = () => {
     const { user } = useAuth();
@@ -110,8 +148,8 @@ const PersonDetail = () => {
                         <div className="flex justify-center">
                             <div className="w-64 h-64 rounded-3xl overflow-hidden border-2 border-white/10 shadow-2xl relative group/photo">
                                 {activeUrls[0] ? (
-                                    <img
-                                        src={`${activeUrls[0].startsWith('/') ? activeUrls[0] : `/${activeUrls[0]}`}`}
+                                    <AuthenticatedImage
+                                        src={activeUrls[0]}
                                         alt={p.name}
                                         className="w-full h-full object-cover"
                                     />
@@ -131,8 +169,8 @@ const PersonDetail = () => {
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/5">
                                 {activeUrls.slice(1).map((url, idx) => (
                                     <div key={`gallery-${idx}`} className="aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-500/30 transition-all group/tile">
-                                        <img
-                                            src={`${url.startsWith('/') ? url : `/${url}`}`}
+                                        <AuthenticatedImage
+                                            src={url}
                                             alt={`${p.name} detail ${idx + 2}`}
                                             className="w-full h-full object-cover group-hover/tile:scale-110 transition-transform duration-500"
                                         />

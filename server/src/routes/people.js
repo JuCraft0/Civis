@@ -3,7 +3,7 @@ const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
 const fs = require('fs');
-const { get, all, run, db } = require('../database');
+const { get, all, run, db, pool } = require('../database');
 const { authenticateToken, requireEditor, requireAdmin } = require('../middlewares/auth');
 const { buildGroupPathAsync, syncRelationships, updateAllNeighbors, updatePersonTextField } = require('../utils/helpers');
 const { processImage, calculateSimilarity } = require('../services/faceRecognition');
@@ -35,17 +35,14 @@ async function getFullPerson(personId) {
     person.partners = relations.filter(r => r.type === 'Beziehung/Partner' || r.type === 'partner').map(r => ({ id: r.id, name: r.name, gender: r.gender, status: r.status }));
     person.social = relations.filter(r => r.type === 'Soziales Umfeld').map(r => ({ id: r.id, name: r.name, gender: r.gender, status: r.status }));
 
+    const { rows: photos } = await pool.query('SELECT id, mime_type FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [personId]);
+    person.photo_urls = photos.map(ph => `/api/people/photo/${ph.id}`);
+    person.photo_url = person.photo_urls[0] || '';
+
     try {
         person.online_profiles = person.online_profiles ? JSON.parse(person.online_profiles) : [];
     } catch (e) {
         person.online_profiles = [];
-    }
-
-    try {
-        person.photo_urls = person.photo_urls ? JSON.parse(person.photo_urls) : [];
-    } catch (e) {
-        // Fallback: if photo_urls is empty but photo_url exists, put it in the array
-        person.photo_urls = person.photo_url ? [person.photo_url] : [];
     }
 
     person.group_path = await buildGroupPathAsync(person.group_id);
@@ -101,16 +98,19 @@ router.get('/', authenticateToken, async (req, res) => {
             return path;
         };
 
-        rows.forEach(p => {
+        for (const p of rows) {
+            const { rows: photos } = await pool.query('SELECT id FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [p.id]);
+            p.photo_urls = photos.map(ph => `/api/people/photo/${ph.id}`);
+            p.photo_url = p.photo_urls[0] || '';
+
             p.family = familyRelations[p.id] || [];
             p.partners = partnerRelations[p.id] || [];
             p.social = socialRelations[p.id] || [];
             p.relationship_count = p.family.length + p.partners.length + p.social.length;
             try { p.online_profiles = p.online_profiles ? JSON.parse(p.online_profiles) : []; } catch (e) { p.online_profiles = []; }
-            try { p.photo_urls = p.photo_urls ? JSON.parse(p.photo_urls) : (p.photo_url ? [p.photo_url] : []); } catch (e) { p.photo_urls = []; }
 
             if (p.group_id) p.group_path = getPath(p.group_id);
-        });
+        }
 
         res.json({ message: "success", data: rows });
     } catch (err) {
@@ -166,20 +166,14 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
         let finalAiMetadata = req.body.ai_metadata !== undefined ? req.body.ai_metadata : current.ai_metadata;
 
         if (photo_url === '' || photo_url === null) {
-            console.log(`[Safety] Clearing AI data and files for person ${personId} because photo_url is empty`);
+            console.log(`[Safety] Clearing AI data and photos for person ${personId} because photo_url is empty`);
             finalFaceDescriptor = null;
             finalAiMetadata = null;
 
-            // Also delete ALL physical files for this person
+            // Also delete ALL physical photos in DB for this person
             try {
-                const currentUrls = current.photo_urls ? JSON.parse(current.photo_urls) : [];
-                currentUrls.forEach(p => {
-                    if (p) {
-                        const filepath = path.join(__dirname, '..', '..', p);
-                        if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
-                    }
-                });
-            } catch (e) { console.error("Error deleting files on module clear", e); }
+                await pool.query('DELETE FROM person_photos WHERE person_id = $1', [personId]);
+            } catch (e) { console.error("Error deleting photos in DB on module clear", e); }
         }
 
         console.log(`[Update] Person ${personId}: photo_url="${photo_url}", face_descriptor is ${finalFaceDescriptor ? 'SET' : 'NULL'}`);
@@ -242,27 +236,9 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 
         await run('DELETE FROM relationships WHERE person_id_1 = ? OR person_id_2 = ?', [personId, personId]);
 
-        // Delete associated photos if exist
-        const person = await get("SELECT photo_url, photo_urls FROM people WHERE id = ?", [personId]);
-        if (person) {
-            const filesToDelete = [];
-            if (person.photo_url) filesToDelete.push(person.photo_url);
-            if (person.photo_urls) {
-                try {
-                    const urls = JSON.parse(person.photo_urls);
-                    urls.forEach(u => {
-                        if (u && !filesToDelete.includes(u)) filesToDelete.push(u);
-                    });
-                } catch (e) { }
-            }
-
-            filesToDelete.forEach(p => {
-                const filepath = path.join(__dirname, '..', '..', p);
-                if (fs.existsSync(filepath)) {
-                    fs.unlinkSync(filepath);
-                }
-            });
-        }
+        // Associated photos will be deleted automatically due to ON DELETE CASCADE
+        // but we'll log it for clarity.
+        console.log(`Deleting person ${personId} and all associated database photos.`);
 
         const result = await run('DELETE FROM people WHERE id = ?', [personId]);
 
@@ -285,34 +261,24 @@ router.delete('/:id/photo/:index', authenticateToken, requireEditor, async (req,
         const current = await get("SELECT * FROM people WHERE id = ?", [personId]);
         if (!current) return res.status(404).json({ error: "Person not found" });
 
-        let photo_urls = [];
-        try {
-            photo_urls = current.photo_urls ? JSON.parse(current.photo_urls) : [];
-        } catch (e) { }
+        // We'll identify the photo by its position in the array.
+        // Get all photos for this person.
+        const { rows: photos } = await pool.query('SELECT id FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [personId]);
 
-        if (index < 0 || index >= photo_urls.length || !photo_urls[index]) {
+        if (index < 0 || index >= photos.length) {
             return res.status(400).json({ error: "Photo not found at this index" });
         }
 
-        // Delete the file
-        const photoPath = photo_urls[index];
-        const filepath = path.join(__dirname, '..', '..', photoPath);
-        if (fs.existsSync(filepath)) {
-            fs.unlinkSync(filepath);
-        }
+        const photoId = photos[index].id;
+        await pool.query('DELETE FROM person_photos WHERE id = $1', [photoId]);
 
-        // Remove from photo_urls array
-        photo_urls[index] = '';
+        // Re-fetch remaining photos
+        const { rows: remainingPhotos } = await pool.query('SELECT id FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [personId]);
+        const photo_urls = remainingPhotos.map(ph => `/api/people/photo/${ph.id}`);
+        const newPrimaryPhoto = photo_urls.length > 0 ? photo_urls[0] : '';
 
-        // Reset primary photo_url if index 0 was deleted
-        const newPrimaryPhoto = (index === 0) ? '' : current.photo_url;
-
-        // Also handle face_descriptors (we should remove the one corresponding to this image if possible)
-        // Since we don't store 1:1 mapping perfectly, we'll clear all descriptors if it was the primary photo,
-        // or just keep the first 5 remains. 
-        // Better: Clear face descriptors and AI metadata if the MAIN photo is deleted.
-        let updateQuery = 'UPDATE people SET photo_urls = ?, photo_url = ?';
-        let params = [JSON.stringify(photo_urls), newPrimaryPhoto];
+        let updateQuery = 'UPDATE people SET photo_url = ?';
+        let params = [newPrimaryPhoto];
 
         if (index === 0) {
             updateQuery += ', face_descriptor = NULL, ai_metadata = NULL';
@@ -339,23 +305,29 @@ router.post('/:id/photo', authenticateToken, requireEditor, upload.single('photo
         const current = await get("SELECT * FROM people WHERE id = ?", [personId]);
         if (!current) return res.status(404).json({ error: "Person not found" });
 
-        const filename = `person_${personId}_${index}_${Date.now()}.webp`;
-        const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
-        if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-
-        const filepath = path.join(uploadsDir, filename);
-
-        console.log(`Processing upload for Person ${personId}, Index ${index}. File: ${req.file.originalname} (${req.file.size} bytes, ${req.file.mimetype})`);
-
+        let WebpBuffer;
         try {
-            await sharp(req.file.buffer)
-                .rotate() // Automatic rotation based on EXIF
+            WebpBuffer = await sharp(req.file.buffer)
+                .rotate()
                 .resize(800, 800, { fit: 'cover' })
                 .webp({ quality: 80 })
-                .toFile(filepath);
+                .toBuffer();
         } catch (sharpErr) {
             console.error("Sharp Processing Error:", sharpErr);
-            return res.status(422).json({ error: "Das Bild konnte nicht verarbeitet werden. Eventuell ist die Datei beschädigt oder hat ein ungültiges Format." });
+            return res.status(422).json({ error: "Das Bild konnte nicht verarbeitet werden." });
+        }
+
+        // Save to Database
+        // Note: If index is specified, we might want to replace an existing photo.
+        // For simplicity, we'll just check if we need to replace or append.
+        const { rows: existingPhotos } = await pool.query('SELECT id FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [personId]);
+
+        if (index < existingPhotos.length) {
+            // Update existing
+            await pool.query('UPDATE person_photos SET photo_data = $1 WHERE id = $2', [WebpBuffer, existingPhotos[index].id]);
+        } else {
+            // Add new
+            await pool.query('INSERT INTO person_photos (person_id, photo_data) VALUES ($1, $2)', [personId, WebpBuffer]);
         }
 
         // Process image with face recognition
@@ -403,32 +375,13 @@ router.post('/:id/photo', authenticateToken, requireEditor, upload.single('photo
             console.error("Face processing error:", err);
         }
 
-        let photo_urls = [];
-        try {
-            photo_urls = current.photo_urls ? JSON.parse(current.photo_urls) : [];
-        } catch (e) { }
+        // Update photo references in memory for return
+        const { rows: updatedPhotos } = await pool.query('SELECT id FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [personId]);
+        const photo_urls = updatedPhotos.map(ph => `/api/people/photo/${ph.id}`);
+        const newPhotoUrl = photo_urls[index] || photo_urls[0] || '';
 
-        // Ensure array has enough slots
-        while (photo_urls.length <= index) photo_urls.push('');
-
-        // delete old photo at this index if exists
-        const oldPhoto = photo_urls[index];
-        if (oldPhoto) {
-            const oldFilepath = path.join(__dirname, '..', '..', oldPhoto);
-            if (fs.existsSync(oldFilepath)) fs.unlinkSync(oldFilepath);
-        }
-
-        const newPhotoUrl = `uploads/${filename}`;
-        photo_urls[index] = newPhotoUrl;
-
-        // Update photo list
-        let updateQuery = 'UPDATE people SET photo_urls = ?';
-        let params = [JSON.stringify(photo_urls)];
-
-        if (index === 0) {
-            updateQuery += ', photo_url = ?';
-            params.push(newPhotoUrl);
-        }
+        let updateQuery = 'UPDATE people SET photo_url = ?';
+        let params = [newPhotoUrl];
 
         if (ai_metadata) {
             updateQuery += ', ai_metadata = ?';
@@ -505,12 +458,13 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
     }
 });
 
-router.post('/analyze', authenticateToken, upload.single('photo'), async (req, res) => {
+router.get('/photo/:photoId', async (req, res) => {
     try {
-        if (!req.file) return res.status(400).json({ error: "No photo provided" });
-        const faceData = await processImage(req.file.buffer);
-        if (!faceData) return res.status(400).json({ error: "No face detected" });
-        res.json({ message: "success", data: faceData });
+        const photo = await get('SELECT photo_data, mime_type FROM person_photos WHERE id = ?', [req.params.photoId]);
+        if (!photo) return res.status(404).send('Not Found');
+
+        res.setHeader('Content-Type', photo.mime_type);
+        res.send(photo.photo_data);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

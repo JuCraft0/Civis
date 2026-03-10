@@ -8,12 +8,12 @@ services:
       - ./server/.env
     environment:
       - NODE_ENV=production
-      - PORT=5005
+      - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
     ports:
       - "5005:5005"
-    volumes:
-      - /media/ZimaOS-HD/Media/Civis:/app/uploads
     restart: always
+    depends_on:
+      - db
 
   client:
     build:

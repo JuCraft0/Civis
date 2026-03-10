@@ -109,23 +109,13 @@ async function initDB() {
             role TEXT
         )`);
 
-        const adminPassword = 'admin';
-        const hashedPassword = await bcrypt.hash(adminPassword, 10);
-        const adminUser = await get("SELECT * FROM users WHERE username = 'admin'");
-        if (!adminUser) {
-            await run(`INSERT INTO users(username, password, role) VALUES(?, ?, ?)`, ['admin', hashedPassword, 'admin']);
-            console.log("Default admin account created.");
-        }
-
-        await pool.query(`CREATE TABLE IF NOT EXISTS relationships(
+        await pool.query(`CREATE TABLE IF NOT EXISTS person_photos (
             id SERIAL PRIMARY KEY,
-            person_id_1 INTEGER,
-            person_id_2 INTEGER,
-            type TEXT,
-            status TEXT,
-            CONSTRAINT fk_p1 FOREIGN KEY(person_id_1) REFERENCES people(id),
-            CONSTRAINT fk_p2 FOREIGN KEY(person_id_2) REFERENCES people(id),
-            UNIQUE(person_id_1, person_id_2, type, status)
+            person_id INTEGER,
+            photo_data BYTEA NOT NULL,
+            mime_type TEXT DEFAULT 'image/webp',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_person_photo FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE
         )`);
 
         await addColumnIfMissing('relationships', 'status', 'TEXT');

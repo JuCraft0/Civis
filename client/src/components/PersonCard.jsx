@@ -1,7 +1,47 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { User, Calendar, Users, Info, ArrowRight } from 'lucide-react';
+import { User, Calendar, Users, Info, ArrowRight, Image as ImageIcon } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
+
+const AuthenticatedImage = ({ src, alt, className }) => {
+    const [imageSrc, setImageSrc] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        let isMounted = true;
+        const loadImage = async () => {
+            try {
+                const token = sessionStorage.getItem('token');
+                if (!token) return;
+                const response = await axios.get(src, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob'
+                });
+                if (isMounted) {
+                    const url = URL.createObjectURL(response.data);
+                    setImageSrc(url);
+                }
+            } catch (error) {
+                console.error("Failed to load authenticated image", error);
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        if (src) loadImage();
+        return () => {
+            isMounted = false;
+            if (imageSrc) URL.revokeObjectURL(imageSrc);
+        };
+    }, [src]);
+
+    if (loading) return <div className={`${className} bg-white/5 animate-pulse`} />;
+    if (!imageSrc) return <div className={`${className} bg-white/5 flex items-center justify-center`}><ImageIcon size={24} /></div>;
+
+    return <img src={imageSrc} alt={alt} className={className} />;
+};
 
 const PersonCard = ({ person }) => {
     const navigate = useNavigate();
@@ -16,22 +56,42 @@ const PersonCard = ({ person }) => {
             className="group relative bg-[#121214] border border-white/10 rounded-3xl p-6 shadow-xl transition-all overflow-hidden cursor-pointer"
             onClick={() => navigate(`/person/${person.id}`, { state: { activeTab: 'people' } })}
         >
+            {/* Photo Background/Overlay */}
+            {person.photo_url && (
+                <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <AuthenticatedImage
+                        src={person.photo_url}
+                        alt=""
+                        className="w-full h-full object-cover filter grayscale blur-sm"
+                    />
+                </div>
+            )}
             {/* Corner Accent */}
             <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-blue-500/20 rounded-tr-3xl transition-colors group-hover:border-blue-500/40"></div>
 
             <div className="relative z-10 flex flex-col h-full">
-                <div className="flex justify-between items-start mb-6">
+                <div className="flex gap-4">
+                    <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 group-hover:border-blue-500/30 transition-colors shadow-lg bg-white/5">
+                        {person.photo_url ? (
+                            <AuthenticatedImage
+                                src={person.photo_url}
+                                alt={person.name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center text-gray-700">
+                                <User size={32} />
+                            </div>
+                        )}
+                    </div>
                     <div>
                         <div className="text-[10px] font-mono text-blue-500/60 uppercase tracking-widest mb-1 flex items-center gap-2">
                             <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></div>
-                            Eintrag
+                            Einträge
                         </div>
                         <h3 className="text-2xl font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">
                             {person.name}
                         </h3>
-                    </div>
-                    <div className="p-3 bg-white/5 rounded-2xl border border-white/5 group-hover:border-blue-500/20 text-gray-500 group-hover:text-blue-400 transition-all">
-                        <User size={20} />
                     </div>
                 </div>
 

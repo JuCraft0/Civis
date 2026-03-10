@@ -6,6 +6,33 @@ const { SECRET_KEY } = require('../middlewares/auth');
 
 const router = express.Router();
 
+router.get('/status', async (req, res) => {
+    try {
+        const userCount = await get("SELECT COUNT(*) as count FROM users");
+        res.json({ isSetup: parseInt(userCount.count) > 0 });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/setup', async (req, res) => {
+    const { username, password } = req.body;
+    try {
+        const userCount = await get("SELECT COUNT(*) as count FROM users");
+        if (parseInt(userCount.count) > 0) {
+            return res.status(403).json({ error: "Setup already completed" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await run(`INSERT INTO users(username, password, role) VALUES(?, ?, ?)`, [username, hashedPassword, 'admin']);
+
+        console.log(`Initial admin account created: ${username}`);
+        res.json({ message: "Setup successful" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.post('/login', async (req, res) => {
     const { username, password } = req.body;
     console.log(`Login attempt for: ${username}`);

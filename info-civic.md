@@ -1,4 +1,4 @@
-# Civis (Defcon Global Monitor) - Systemdokumentation
+# Civis- Systemdokumentation
 
 **Stand:** Februar 2026
 **Zweck:** Civis ist ein hochspezialisiertes, webbasiertes System zur Erfassung, Verwaltung und Visualisierung von Personen, deren hierarchischen Gruppenzugehörigkeiten und komplexen sozialen Beziehungsgeflechten. 
