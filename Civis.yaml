@@ -2,6 +2,7 @@ name: refreshing_nicolas
 services:
   client:
     cpu_shares: 90
+    command: ["nginx", "-g", "daemon off;"]
     container_name: civis-client
     depends_on:
       server:
@@ -24,6 +25,7 @@ services:
 
   server:
     cpu_shares: 90
+    command: ["node", "index.js"]
     container_name: civis-server
     depends_on:
       db:

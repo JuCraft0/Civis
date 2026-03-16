@@ -36,4 +36,4 @@ COPY . .
 EXPOSE 5005
 
 # Start the server (Empty as requested, handled externally or by start.sh in older versions)
-
+CMD ["node", "index.js"]
