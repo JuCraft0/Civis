@@ -119,6 +119,17 @@ async function initDB(retries = 5) {
             CONSTRAINT fk_person_photo FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE
         )`);
 
+        await pool.query(`CREATE TABLE IF NOT EXISTS relationships (
+            id SERIAL PRIMARY KEY,
+            person_id_1 INTEGER NOT NULL,
+            person_id_2 INTEGER NOT NULL,
+            type TEXT NOT NULL,
+            status TEXT,
+            UNIQUE (person_id_1, person_id_2, type),
+            CONSTRAINT fk_rel_1 FOREIGN KEY (person_id_1) REFERENCES people(id) ON DELETE CASCADE,
+            CONSTRAINT fk_rel_2 FOREIGN KEY (person_id_2) REFERENCES people(id) ON DELETE CASCADE
+        )`);
+
         await addColumnIfMissing('relationships', 'status', 'TEXT');
 
         console.log("Database initialized successfully.");
