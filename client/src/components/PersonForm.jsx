@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPerson, updatePerson, deletePerson, uploadPhoto, deletePhoto } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, deletePhoto, getGroups, getPeople } from '../services/api';
 import HUDSelect from './HUDSelect';
 import { Calendar as CalendarIcon, Save, X, Users, Search, UserPlus, UserMinus, Plus, Image as ImageIcon, Upload, ChevronDown, Globe, Trash2, Scan } from 'lucide-react';
 import { analyzeFace } from '../services/api';
