@@ -57,13 +57,14 @@ router.post('/', authenticateToken, requireEditor, async (req, res) => {
 router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
     try {
         const { name, description, parent_id } = req.body;
+        const cleanParentId = parent_id === '' ? null : parent_id;
         const result = await run(`
             UPDATE groups SET 
                 name = COALESCE(?, name), 
                 description = COALESCE(?, description), 
                 parent_id = ? 
             WHERE id = ?
-        `, [name, description, parent_id, req.params.id]);
+        `, [name, description, cleanParentId, req.params.id]);
         res.json({ message: "success", changes: result.changes });
     } catch (err) {
         res.status(400).json({ error: err.message });

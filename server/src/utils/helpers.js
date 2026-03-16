@@ -147,9 +147,9 @@ const syncRelationships = async (personId, relationsPayload, type = 'Familie') =
             const oppositeStatus = getOppositeStatus(status, selfPerson ? selfPerson.gender : null);
 
             // Forward relation
-            await run("INSERT OR REPLACE INTO relationships (person_id_1, person_id_2, type, status) VALUES (?, ?, ?, ?)", [personId, target.id, type, status]);
+            await run("INSERT INTO relationships (person_id_1, person_id_2, type, status) VALUES (?, ?, ?, ?) ON CONFLICT (person_id_1, person_id_2, type) DO UPDATE SET status = EXCLUDED.status", [personId, target.id, type, status]);
             // Reverse relation (Symmetric Logic)
-            await run("INSERT OR REPLACE INTO relationships (person_id_1, person_id_2, type, status) VALUES (?, ?, ?, ?)", [target.id, personId, type, oppositeStatus]);
+            await run("INSERT INTO relationships (person_id_1, person_id_2, type, status) VALUES (?, ?, ?, ?) ON CONFLICT (person_id_1, person_id_2, type) DO UPDATE SET status = EXCLUDED.status", [target.id, personId, type, oppositeStatus]);
         }
     }
 };

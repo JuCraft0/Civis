@@ -159,7 +159,8 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
         const current = await get("SELECT * FROM people WHERE id = ?", [personId]);
         if (!current) return res.status(404).json({ error: "Person not found" });
 
-        const updatedGroupId = (group_id !== undefined) ? group_id : current.group_id;
+        let updatedGroupId = (group_id !== undefined) ? group_id : current.group_id;
+        if (updatedGroupId === '') updatedGroupId = null;
 
         // Safety: If the photo_url is cleared, we should also clear the face identification data
         let finalFaceDescriptor = req.body.face_descriptor !== undefined ? req.body.face_descriptor : current.face_descriptor;
