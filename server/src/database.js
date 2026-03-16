@@ -9,7 +9,7 @@ const pool = new Pool({
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
+    // Don't exit the process! Allow standard reconnections.
 });
 
 const run = async (sql, params = []) => {
@@ -44,8 +44,9 @@ const all = async (sql, params = []) => {
     return rows;
 };
 
-async function initDB() {
-    try {
+async function initDB(retries = 5) {
+    while (retries > 0) {
+        try {
         await pool.query(`CREATE TABLE IF NOT EXISTS groups (
             id SERIAL PRIMARY KEY,
             name TEXT NOT NULL,
@@ -121,8 +122,17 @@ async function initDB() {
         await addColumnIfMissing('relationships', 'status', 'TEXT');
 
         console.log("Database initialized successfully.");
+        return; // Success, exit loop
     } catch (error) {
-        console.error("Database initialization failed:", error);
+        console.error("Database initialization failed:", error.message);
+        retries -= 1;
+        if (retries === 0) {
+            console.error("No more retries left. Database might not be initialized properly.");
+        } else {
+            console.log(`Retries left: ${retries}. Waiting 5 seconds before retrying...`);
+            await new Promise(res => setTimeout(res, 5000));
+        }
+    }
     }
 }
 
