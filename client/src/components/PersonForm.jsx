@@ -281,14 +281,33 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [groupsRes, peopleRes] = await Promise.all([
-                    getGroups(),
-                    getPeople()
-                ]);
-                setGroups(groupsRes.data);
-                setAllPeople(peopleRes.data);
+                const groupsRes = await getGroups();
+                // Handle different Axios response wrapping safely
+                const groupsData = groupsRes?.data?.data ? groupsRes.data.data : (groupsRes?.data || groupsRes || []);
+                if (Array.isArray(groupsData)) {
+                    setGroups(groupsData);
+                } else if (groupsRes && Array.isArray(groupsRes.data)) {
+                    setGroups(groupsRes.data);
+                } else {
+                    setGroups([]);
+                }
             } catch (err) {
-                console.error("Failed to fetch data", err);
+                console.error("Failed to fetch groups", err);
+            }
+
+            try {
+                const peopleRes = await getPeople();
+                // Handle different Axios response wrapping safely
+                const peopleData = peopleRes?.data?.data ? peopleRes.data.data : (peopleRes?.data || peopleRes || []);
+                if (Array.isArray(peopleData)) {
+                    setAllPeople(peopleData);
+                } else if (peopleRes && Array.isArray(peopleRes.data)) {
+                    setAllPeople(peopleRes.data);
+                } else {
+                    setAllPeople([]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch people", err);
             }
         };
         fetchData();
