@@ -366,7 +366,7 @@ const Dashboard = () => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-blue-600 pl-6 py-2">
                     <div>
                         <h1 className="text-4xl font-black uppercase tracking-tighter bg-gradient-to-r from-blue-400 via-white to-purple-500 bg-clip-text text-transparent">
-                            Civis.OS <span className="text-xs font-mono text-blue-500/50 align-top ml-2">v2.4.0</span>
+                            Civis.OS <span className="text-xs font-mono text-blue-500/50 align-top ml-2">v2.4.1</span>
                         </h1>
                         <p className="text-gray-500 font-mono text-xs mt-1">BENUTZER: {user?.username?.toUpperCase()} // STATUS: ANGEMELDET</p>
                     </div>
