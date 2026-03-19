@@ -102,11 +102,16 @@ async function verifyFaces(buf1, buf2) {
 function calculateSimilarity(d1, d2) {
     if (!d1 || !d2 || d1.length !== d2.length) return 1.0;
 
-    let sum = 0;
+    let dot = 0;
+    let norm1 = 0;
+    let norm2 = 0;
     for (let i = 0; i < d1.length; i++) {
-        sum += (d1[i] - d2[i]) ** 2;
+        dot += d1[i] * d2[i];
+        norm1 += d1[i] ** 2;
+        norm2 += d2[i] ** 2;
     }
-    return Math.sqrt(sum);
+    const similarity = dot / (Math.sqrt(norm1) * Math.sqrt(norm2));
+    return 1.0 - similarity; 
 }
 
 /**

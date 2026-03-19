@@ -17,7 +17,7 @@ app = FastAPI(title="Civis Face AI Service", version="1.0.0")
 # Model configuration - using Facenet512 for best accuracy/speed balance
 MODEL_NAME = "Facenet512"
 DETECTOR_BACKEND = "retinaface"
-DISTANCE_METRIC = "euclidean_l2"
+DISTANCE_METRIC = "cosine"
 
 
 def decode_image(file_bytes: bytes) -> str:
@@ -42,10 +42,10 @@ async def analyze(photo: UploadFile = File(...)):
     """
     try:
         file_bytes = await photo.read()
-        img_data = decode_image(file_bytes)
+        img_array = np.array(bytes_to_pil(file_bytes))
 
         results = DeepFace.analyze(
-            img_path=img_data,
+            img_path=img_array,
             actions=["age", "gender", "race", "emotion"],
             detector_backend=DETECTOR_BACKEND,
             enforce_detection=False,
@@ -77,10 +77,10 @@ async def represent(photo: UploadFile = File(...)):
     """
     try:
         file_bytes = await photo.read()
-        img_data = decode_image(file_bytes)
+        img_array = np.array(bytes_to_pil(file_bytes))
 
         embeddings = DeepFace.represent(
-            img_path=img_data,
+            img_path=img_array,
             model_name=MODEL_NAME,
             detector_backend=DETECTOR_BACKEND,
             enforce_detection=False,
@@ -112,12 +112,12 @@ async def verify(
         bytes1 = await photo1.read()
         bytes2 = await photo2.read()
 
-        img1_data = decode_image(bytes1)
-        img2_data = decode_image(bytes2)
+        img1_array = np.array(bytes_to_pil(bytes1))
+        img2_array = np.array(bytes_to_pil(bytes2))
 
         result = DeepFace.verify(
-            img1_path=img1_data,
-            img2_path=img2_data,
+            img1_path=img1_array,
+            img2_path=img2_array,
             model_name=MODEL_NAME,
             detector_backend=DETECTOR_BACKEND,
             distance_metric=DISTANCE_METRIC,
