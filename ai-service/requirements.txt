@@ -1,5 +1,6 @@
 deepface==0.0.93
 tensorflow-cpu==2.15.0
+tf-keras
 opencv-python-headless==4.9.0.80
 fastapi==0.111.0
 uvicorn[standard]==0.29.0
