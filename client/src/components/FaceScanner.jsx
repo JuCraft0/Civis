@@ -170,7 +170,11 @@ const FaceScanner = () => {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
+                                                        <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                            <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
+                                                            {idx === 0 && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0">TOP</span>}
+                                                            {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0">✓ VERIFIZIERT</span>}
+                                                        </div>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                                                                 <div

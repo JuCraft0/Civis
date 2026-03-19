@@ -9,11 +9,15 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      - FACE_AI_URL=http://face-ai:8000
     ports:
       - "5005:5005"
     restart: always
     depends_on:
       - db
+      - face-ai
+    networks:
+      - civis-net
 
   client:
     build:
@@ -25,3 +29,28 @@ services:
     depends_on:
       - server
     restart: always
+    networks:
+      - civis-net
+
+  face-ai:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    container_name: civis-face-ai
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+    volumes:
+      # Cache downloaded DeepFace model weights so they don't re-download on restart
+      - deepface_weights:/root/.deepface/weights
+    networks:
+      - civis-net
+
+networks:
+  civis-net:
+    driver: bridge
+
+volumes:
+  deepface_weights:

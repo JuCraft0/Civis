@@ -1,119 +1,161 @@
-const tf = require('@tensorflow/tfjs-node');
-const { Human } = require('@vladmandic/human');
-const fs = require('fs');
-const path = require('path');
-const sharp = require('sharp');
+/**
+ * faceRecognition.js
+ * 
+ * HTTP client that delegates all face AI work to the Python DeepFace microservice
+ * running at http://face-ai:8000 (Docker internal network).
+ * 
+ * Public API (kept compatible with the old Human.js-based module):
+ *   processImage(imageBuffer)  → { descriptor, estimatedAge, estimatedGender, confidence }
+ *   calculateSimilarity(d1, d2) → euclidean_l2 distance (lower = more similar)
+ *   analyzeImage(imageBuffer)  → { age, gender, race, emotion, ... }
+ *   verifyFaces(buf1, buf2)    → { verified, distance, threshold }
+ */
 
-// Path to downloaded Human models included in the package
-const modelsDir = path.join(__dirname, '..', '..', 'node_modules', '@vladmandic', 'human', 'models');
+const FormData = require('form-data');
+const fetch = require('node-fetch');
 
-const humanConfig = {
-    backend: 'tensorflow',
-    modelBasePath: `file://${modelsDir}`,
-    debug: false,
-    face: {
-        enabled: true,
-        detector: { return: true, rotation: true, maxDetected: 1, minConfidence: 0.2 },
-        mesh: { enabled: true },
-        iris: { enabled: false },
-        description: { enabled: true }, // Extracts 1024-dim embedding
-        emotion: { enabled: false },
-        antispoof: { enabled: false },
-        liveness: { enabled: false }
-    },
-    body: { enabled: false },
-    hand: { enabled: false },
-    object: { enabled: false },
-    gesture: { enabled: false },
-    segmentation: { enabled: false }
-};
+const FACE_AI_URL = process.env.FACE_AI_URL || 'http://face-ai:8000';
 
-const human = new Human(humanConfig);
+/**
+ * Call the /represent endpoint to get a 512-dim face embedding.
+ * @param {Buffer} imageBuffer
+ * @returns {Promise<number[] | null>}
+ */
+async function getEmbedding(imageBuffer) {
+    const form = new FormData();
+    form.append('photo', imageBuffer, { filename: 'photo.jpg', contentType: 'image/jpeg' });
 
-let modelsLoaded = false;
+    const response = await fetch(`${FACE_AI_URL}/represent`, {
+        method: 'POST',
+        body: form,
+        headers: form.getHeaders(),
+    });
 
-async function loadModels() {
-    if (modelsLoaded) return;
-    console.log('Loading Human AI models...');
-    await human.load();
-    await human.warmup();
-    console.log('Human models loaded and warmed up.');
-    modelsLoaded = true;
-}
+    if (!response.ok) {
+        const err = await response.text();
+        console.error(`[face-ai] /represent failed (${response.status}): ${err}`);
+        return null;
+    }
 
-// Convert buffer to tensor
-function bufferToTensor(buffer) {
-    return tf.node.decodeImage(buffer, 3);
+    const data = await response.json();
+    return data.embedding || null;
 }
 
 /**
- * Process an image buffer and extract face descriptor, age, and gender
- * @param {Buffer} imageBuffer 
- * @returns {Promise<{descriptor: number[], estimatedAge: number, estimatedGender: string, confidence: number} | null>}
+ * Call the /analyze endpoint to get age, gender, race, emotion.
+ * @param {Buffer} imageBuffer
+ * @returns {Promise<object | null>}
+ */
+async function analyzeImage(imageBuffer) {
+    const form = new FormData();
+    form.append('photo', imageBuffer, { filename: 'photo.jpg', contentType: 'image/jpeg' });
+
+    const response = await fetch(`${FACE_AI_URL}/analyze`, {
+        method: 'POST',
+        body: form,
+        headers: form.getHeaders(),
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        console.error(`[face-ai] /analyze failed (${response.status}): ${err}`);
+        return null;
+    }
+
+    return response.json();
+}
+
+/**
+ * Call the /verify endpoint for precise 1:1 comparison.
+ * @param {Buffer} buf1
+ * @param {Buffer} buf2
+ * @returns {Promise<{ verified: boolean, distance: number, threshold: number } | null>}
+ */
+async function verifyFaces(buf1, buf2) {
+    const form = new FormData();
+    form.append('photo1', buf1, { filename: 'photo1.jpg', contentType: 'image/jpeg' });
+    form.append('photo2', buf2, { filename: 'photo2.jpg', contentType: 'image/jpeg' });
+
+    const response = await fetch(`${FACE_AI_URL}/verify`, {
+        method: 'POST',
+        body: form,
+        headers: form.getHeaders(),
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        console.error(`[face-ai] /verify failed (${response.status}): ${err}`);
+        return null;
+    }
+
+    return response.json();
+}
+
+/**
+ * Calculates Euclidean L2 distance between two embedding vectors.
+ * Lower is better (0 = identical, ≥ 1.0 = very different).
+ * This is used for Stage 1 rough approximation in the DB.
+ * @param {number[]} d1
+ * @param {number[]} d2
+ * @returns {number}
+ */
+function calculateSimilarity(d1, d2) {
+    if (!d1 || !d2 || d1.length !== d2.length) return 1.0;
+
+    let sum = 0;
+    for (let i = 0; i < d1.length; i++) {
+        sum += (d1[i] - d2[i]) ** 2;
+    }
+    return Math.sqrt(sum);
+}
+
+/**
+ * High-level wrapper: get both the embedding and the AI analysis in one call.
+ * Drop-in compatible with the old Human.js processImage() function.
+ * @param {Buffer} imageBuffer
+ * @returns {Promise<{ descriptor: number[], estimatedAge: number, estimatedGender: string, confidence: number } | null>}
  */
 async function processImage(imageBuffer) {
-    await loadModels();
-
     try {
-        // Normalize image using sharp to ensure it's upright (fix EXIF rotation) and has good contrast
-        const normalizedBuffer = await sharp(imageBuffer)
-            .rotate()
-            .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
-            .normalize()
-            .toBuffer();
+        const [embedding, analysis] = await Promise.all([
+            getEmbedding(imageBuffer),
+            analyzeImage(imageBuffer),
+        ]);
 
-        const tensor = bufferToTensor(normalizedBuffer);
-
-        try {
-            // Run Human detection
-            const result = await human.detect(tensor);
-
-            if (!result || !result.face || result.face.length === 0) {
-                console.log('Human AI: No face detected.');
-                return null;
-            }
-
-            const primaryFace = result.face[0];
-
-            console.log(`Human Detected: Age ~${Math.round(primaryFace.age)}, Gender ${primaryFace.gender}, Score ${primaryFace.boxScore.toFixed(2)}`);
-
-            return {
-                descriptor: Array.from(primaryFace.embedding), // Human uses 'embedding' (length depends on model, default is 1024 for faceres)
-                estimatedAge: Math.round(primaryFace.age),
-                estimatedGender: primaryFace.gender, // returns 'male' or 'female'
-                confidence: primaryFace.boxScore
-            };
-        } finally {
-            tensor.dispose();
+        if (!embedding) {
+            console.log('[face-ai] No face embedding returned — face likely not detected.');
+            return null;
         }
+
+        const estimatedAge = analysis?.age ?? null;
+        const estimatedGender = analysis?.gender?.toLowerCase() ?? null;
+
+        console.log(`[face-ai] Detected: Age ~${estimatedAge}, Gender ${estimatedGender}`);
+
+        return {
+            descriptor: embedding,
+            estimatedAge,
+            estimatedGender,
+            confidence: 1.0, // DeepFace doesn't return a detection confidence score directly
+            race: analysis?.race ?? null,
+            emotion: analysis?.emotion ?? null,
+        };
     } catch (err) {
-        console.error("Image processing error with Human AI:", err);
+        console.error('[face-ai] processImage error:', err.message);
         return null;
     }
 }
 
-/**
- * Calculate Euclidean Distance between two descriptors
- * Lower is better. Typically < 0.6 is considered a match.
- * @param {number[]} desc1 
- * @param {number[]} desc2 
- * @returns {number}
- */
-function calculateSimilarity(desc1, desc2) {
-    if (!desc1 || !desc2 || desc1.length !== desc2.length) return 1.0;
-
-    // Use Human's built-in similarity function which handles their 1024-dim embeddings properly
-    // It returns a value between 0 (no match) and 1 (exact match).
-    const similarity = human.match.similarity(desc1, desc2);
-
-    // Our existing logic expects a "distance" where lower is better. 
-    // We invert it: distance = 1.0 - similarity.
-    // So identical = 0.0, very similar = 0.1-0.3, different > 0.4
-    return 1.0 - similarity;
+// Legacy stub — models are loaded on-demand by the Python service
+async function loadModels() {
+    console.log('[face-ai] Model loading is handled by the Python microservice.');
 }
 
 module.exports = {
     loadModels,
     processImage,
-    calculateSimilarity
+    calculateSimilarity,
+    analyzeImage,
+    getEmbedding,
+    verifyFaces,
 };

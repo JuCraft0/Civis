@@ -31,6 +31,9 @@ services:
       db:
         condition: service_started
         required: true
+      face-ai:
+        condition: service_started
+        required: true
     deploy:
       resources:
         limits:
@@ -39,6 +42,7 @@ services:
       - DATABASE_URL=postgres://civis:civis@db:5432/civis
       - NODE_ENV=production
       - PORT=5005
+      - FACE_AI_URL=http://face-ai:8000
     image: jucraft0/civis-server:latest
     labels:
       icon: https://raw.githubusercontent.com/JuCraft0/Civis/main/client/public/logo.png
@@ -59,10 +63,29 @@ services:
     networks:
       - civis-net
 
+  face-ai:
+    cpu_shares: 90
+    container_name: civis-face-ai
+    deploy:
+      resources:
+        limits:
+          memory: 4294967296
+    image: jucraft0/civis-face-ai:latest
+    labels:
+      icon: https://raw.githubusercontent.com/JuCraft0/Civis/main/client/public/logo.png
+    volumes:
+      - deepface_weights:/root/.deepface/weights
+    restart: unless-stopped
+    networks:
+      - civis-net
+
 networks:
   civis-net:
     name: refreshing_nicolas_civis-net
     driver: bridge
+
+volumes:
+  deepface_weights:
 
 x-casaos:
   architectures:

@@ -37,3 +37,10 @@ jobs:
           context: ./client
           push: true
           tags: jucraft0/civis-client:latest
+
+      - name: Build & Push Face AI
+        uses: docker/build-push-action@v4
+        with:
+          context: ./ai-service
+          push: true
+          tags: jucraft0/civis-face-ai:latest

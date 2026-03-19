@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe } from 'lucide-react';
+import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe, Brain } from 'lucide-react';
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
@@ -385,6 +385,46 @@ const PersonDetail = () => {
                                 </div>
                             );
                         })}
+                    </div>
+                );
+            }
+        },
+        {
+            id: 'ai_analysis',
+            label: 'KI-Analyse',
+            icon: Brain,
+            color: 'purple',
+            fullWidth: false,
+            isActive: (p) => {
+                try {
+                    if (!p.ai_metadata) return false;
+                    const ai = JSON.parse(p.ai_metadata);
+                    return !!(ai.race || ai.emotion);
+                } catch { return false; }
+            },
+            render: (p) => {
+                let ai = {};
+                try { ai = JSON.parse(p.ai_metadata); } catch { }
+                const raceMap = { white: 'Kaukasisch', black: 'Dunkelhäutig', asian: 'Asiatisch', 'middle eastern': 'Nahost', latino: 'Lateinamerikanisch', indian: 'Indisch' };
+                const emotionMap = { happy: '😊 Fröhlich', sad: '😢 Traurig', angry: '😠 Wütend', fear: '😨 Angst', surprise: '😲 Überraschung', neutral: '😐 Neutral', disgust: '🤢 Ekel' };
+
+                return (
+                    <div className="space-y-3">
+                        {ai.race && (
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider mb-1">Abstammung (KI)</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-lg font-black text-white uppercase tracking-tight">{raceMap[ai.race?.toLowerCase()] || ai.race}</span>
+                                    <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] rounded-md font-mono border border-yellow-500/30">APPROX.</span>
+                                </div>
+                            </div>
+                        )}
+                        {ai.emotion && (
+                            <div className="flex flex-col">
+                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider mb-1">Emotion (KI)</span>
+                                <span className="text-lg font-black text-white">{emotionMap[ai.emotion?.toLowerCase()] || ai.emotion}</span>
+                            </div>
+                        )}
                     </div>
                 );
             }

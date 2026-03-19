@@ -6,7 +6,7 @@ const fs = require('fs');
 const { get, all, run, db, pool } = require('../database');
 const { authenticateToken, requireEditor, requireAdmin } = require('../middlewares/auth');
 const { buildGroupPathAsync, syncRelationships, updateAllNeighbors, updatePersonTextField } = require('../utils/helpers');
-const { processImage, calculateSimilarity } = require('../services/faceRecognition');
+const { processImage, calculateSimilarity, verifyFaces, getEmbedding } = require('../services/faceRecognition');
 
 const router = express.Router();
 
@@ -410,12 +410,13 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
     try {
         if (!req.file) return res.status(400).json({ error: "No photo provided" });
 
-        const faceData = await processImage(req.file.buffer);
-        if (!faceData) return res.status(400).json({ error: "No face detected in the image" });
+        // ── Stage 1: Fast approximate search via stored embeddings ─────────────
+        const queryEmbedding = await getEmbedding(req.file.buffer);
+        if (!queryEmbedding) return res.status(400).json({ error: "No face detected in the image" });
 
-        const peopleRows = await all("SELECT * FROM people WHERE face_descriptor IS NOT NULL");
+        const peopleRows = await all("SELECT id, name, face_descriptor FROM people WHERE face_descriptor IS NOT NULL");
 
-        let matches = [];
+        let candidates = [];
         for (const p of peopleRows) {
             try {
                 const descData = JSON.parse(p.face_descriptor);
@@ -423,30 +424,60 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
 
                 if (Array.isArray(descData) && descData.length > 0) {
                     if (Array.isArray(descData[0])) {
-                        descriptorsToTest = descData; // Array of arrays
+                        descriptorsToTest = descData;
                     } else {
-                        descriptorsToTest = [descData]; // Single flat array
+                        descriptorsToTest = [descData];
                     }
                 }
 
-                let bestDistance = 1.0;
+                let bestDistance = Infinity;
                 for (const storedDesc of descriptorsToTest) {
-                    const dist = calculateSimilarity(faceData.descriptor, storedDesc);
-                    if (dist < bestDistance) {
-                        bestDistance = dist;
-                    }
+                    const dist = calculateSimilarity(queryEmbedding, storedDesc);
+                    if (dist < bestDistance) bestDistance = dist;
                 }
 
-                // Log distances for debugging
-                console.log(`Comparing with ${p.name} (ID: ${p.id}) - Best Distance: ${bestDistance.toFixed(4)}`);
-
-                // Typically: < 0.4 very strong match, 0.4-0.6 likely same person, > 0.6 different person
-                if (bestDistance < 0.65) {
-                    const fullPerson = await getFullPerson(p.id);
-                    matches.push({ person: fullPerson, distance: bestDistance });
-                }
+                console.log(`[Stage 1] ${p.name} (ID: ${p.id}) - Distance: ${bestDistance.toFixed(4)}`);
+                candidates.push({ id: p.id, name: p.name, stage1Distance: bestDistance });
             } catch (e) {
                 console.error("Error parsing descriptor for person", p.id);
+            }
+        }
+
+        // Sort by distance and take top 5
+        candidates.sort((a, b) => a.stage1Distance - b.stage1Distance);
+        const top5 = candidates.slice(0, 5);
+
+        // ── Stage 2: Precise verification using DeepFace.verify ───────────────
+        const matches = [];
+        for (const candidate of top5) {
+            try {
+                // Load that person's primary photo from DB
+                const { rows: photos } = await pool.query(
+                    'SELECT photo_data FROM person_photos WHERE person_id = $1 ORDER BY id ASC LIMIT 1',
+                    [candidate.id]
+                );
+
+                if (!photos || photos.length === 0) {
+                    console.log(`[Stage 2] No photo found for person ${candidate.id}, skipping verify`);
+                    continue;
+                }
+
+                const storedPhotoBuffer = photos[0].photo_data;
+                const verifyResult = await verifyFaces(req.file.buffer, storedPhotoBuffer);
+
+                console.log(`[Stage 2] ${candidate.name} (ID: ${candidate.id}) - verified: ${verifyResult?.verified}, distance: ${verifyResult?.distance?.toFixed(4)}`);
+
+                if (verifyResult && verifyResult.verified) {
+                    const fullPerson = await getFullPerson(candidate.id);
+                    matches.push({
+                        person: fullPerson,
+                        distance: verifyResult.distance,
+                        stage1Distance: candidate.stage1Distance,
+                        verified: true,
+                    });
+                }
+            } catch (e) {
+                console.error(`[Stage 2] Error verifying candidate ${candidate.id}:`, e.message);
             }
         }
 
@@ -461,10 +492,14 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
 
 router.get('/photo/:photoId', async (req, res) => {
     try {
-        const photo = await get('SELECT photo_data, mime_type FROM person_photos WHERE id = ?', [req.params.photoId]);
-        if (!photo) return res.status(404).send('Not Found');
+        const { rows } = await pool.query(
+            'SELECT photo_data, mime_type FROM person_photos WHERE id = $1',
+            [parseInt(req.params.photoId)]
+        );
+        if (!rows || rows.length === 0) return res.status(404).send('Not Found');
 
-        res.setHeader('Content-Type', photo.mime_type);
+        const photo = rows[0];
+        res.setHeader('Content-Type', photo.mime_type || 'image/webp');
         res.send(photo.photo_data);
     } catch (err) {
         res.status(500).json({ error: err.message });
