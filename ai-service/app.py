@@ -84,12 +84,15 @@ async def represent(photo: UploadFile = File(...)):
             model_name=MODEL_NAME,
             detector_backend=DETECTOR_BACKEND,
             enforce_detection=False,
+            align=True,
+            normalization="Facenet",
         )
 
         if not embeddings:
             raise HTTPException(status_code=422, detail="No face detected in image")
 
         # Return the embedding of the first detected face
+        logger.info(f"Generated embedding for face (length: {len(embeddings[0]['embedding'])})")
         return {"embedding": embeddings[0]["embedding"]}
     except HTTPException:
         raise
@@ -122,7 +125,11 @@ async def verify(
             detector_backend=DETECTOR_BACKEND,
             distance_metric=DISTANCE_METRIC,
             enforce_detection=False,
+            align=True,
+            normalization="Facenet",
         )
+
+        logger.info(f"Verification result: {result.get('verified')} (distance: {result.get('distance'):.4f}, threshold: {result.get('threshold')})")
 
         return {
             "verified": result.get("verified", False),

@@ -443,13 +443,13 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
             }
         }
 
-        // Sort by distance and take top 5
+        // Sort by distance and take top 10
         candidates.sort((a, b) => a.stage1Distance - b.stage1Distance);
-        const top5 = candidates.slice(0, 5);
+        const top10 = candidates.slice(0, 10);
 
         // ── Stage 2: Precise verification using DeepFace.verify ───────────────
         const matches = [];
-        for (const candidate of top5) {
+        for (const candidate of top10) {
             try {
                 // Load that person's primary photo from DB
                 const { rows: photos } = await pool.query(
@@ -467,13 +467,14 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
 
                 console.log(`[Stage 2] ${candidate.name} (ID: ${candidate.id}) - verified: ${verifyResult?.verified}, distance: ${verifyResult?.distance?.toFixed(4)}`);
 
-                if (verifyResult && verifyResult.verified) {
+                if (verifyResult && (verifyResult.verified || verifyResult.distance < 0.55)) {
                     const fullPerson = await getFullPerson(candidate.id);
                     matches.push({
                         person: fullPerson,
                         distance: verifyResult.distance,
                         stage1Distance: candidate.stage1Distance,
-                        verified: true,
+                        verified: verifyResult.verified,
+                        is_near_match: !verifyResult.verified && verifyResult.distance < 0.55
                     });
                 }
             } catch (e) {
