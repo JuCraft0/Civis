@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Civis Face AI Service", version="1.0.0")
 
-# Model configuration - using Facenet512 for best accuracy/speed balance
+# Model configuration - optimized for accuracy
 MODEL_NAME = "Facenet512"
-DETECTOR_BACKEND = "retinaface"
+DETECTOR_BACKEND = "ssd" # Fast, low memory, CPU friendly
 DISTANCE_METRIC = "cosine"
 
 
