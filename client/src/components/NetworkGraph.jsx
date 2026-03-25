@@ -63,11 +63,21 @@ const NetworkGraph = ({ data }) => {
     }, [data.links]);
 
     const handleNodeClick = useCallback(node => {
-        if (fgRef.current) {
-            fgRef.current.centerAt(node.x, node.y, 1000);
-            fgRef.current.zoom(4, 2000);
+        if (hoverNode === node) {
+            // Second tap/click on the same node: navigate
+            if (node.id.startsWith('person_')) {
+                const personId = node.id.replace('person_', '');
+                navigate(`/person/${personId}`, { state: { activeTab: 'network' } });
+            }
+        } else {
+            // First tap: acts like hover on mobile, and zooms
+            setHoverNode(node);
+            if (fgRef.current) {
+                fgRef.current.centerAt(node.x, node.y, 1000);
+                fgRef.current.zoom(4, 2000);
+            }
         }
-    }, [fgRef]);
+    }, [fgRef, hoverNode, navigate]);
 
     const handleNodeRightClick = (node, event) => {
         event.preventDefault();
@@ -364,8 +374,8 @@ const NetworkGraph = ({ data }) => {
             {/* Hint Overlay */}
             <div className="absolute top-4 right-4 z-10 pointer-events-none opacity-50 group-hover/graph:opacity-100 transition-opacity">
                 <div className="bg-black/60 border border-white/10 rounded-xl p-3 text-right backdrop-blur-md">
-                    <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest"><span className="text-white font-bold">Klick</span>: Zoom & Focus</p>
-                    <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest mt-1"><span className="text-blue-400 font-bold">Rechtsklick</span>: Profil öffnen</p>
+                    <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest"><span className="text-white font-bold">Tippen/Klick</span>: Zoom & Focus</p>
+                    <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest mt-1"><span className="text-blue-400 font-bold">Doppeltipp/Rechtsklick</span>: Profil öffnen</p>
                 </div>
             </div>
 

@@ -71,7 +71,7 @@ const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
                     </div>
                 </div>
 
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                     {(user?.role === 'admin' || user?.role === 'editor') && (
                         <button
                             onClick={() => onEdit(group)}
@@ -395,39 +395,41 @@ const Dashboard = () => {
                 </div>
 
                 {/* Navbar/Tabs */}
-                <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10 w-fit">
-                    <button
-                        onClick={() => setActiveTab('people')}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'people' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <Users size={16} /> PERSONEN
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('groups')}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'groups' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <LayoutGrid size={16} /> GRUPPEN
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('network')}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'network' ? 'bg-green-600 text-white shadow-lg shadow-green-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <Share2 size={16} /> NETZWERK
-                    </button>
-                    {user?.role === 'admin' && (
+                <div className="overflow-x-auto pb-2 -mb-2 custom-scrollbar">
+                    <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10 w-max">
                         <button
-                            onClick={() => setActiveTab('users')}
-                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'users' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            onClick={() => setActiveTab('people')}
+                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'people' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
-                            <Shield size={16} /> BENUTZER
+                            <Users size={16} /> PERSONEN
                         </button>
-                    )}
-                    <button
-                        onClick={() => setActiveTab('facescan')}
-                        className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'facescan' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <Scan size={16} /> FACE SCAN
-                    </button>
+                        <button
+                            onClick={() => setActiveTab('groups')}
+                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'groups' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <LayoutGrid size={16} /> GRUPPEN
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('network')}
+                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'network' ? 'bg-green-600 text-white shadow-lg shadow-green-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Share2 size={16} /> NETZWERK
+                        </button>
+                        {user?.role === 'admin' && (
+                            <button
+                                onClick={() => setActiveTab('users')}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'users' ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Shield size={16} /> BENUTZER
+                            </button>
+                        )}
+                        <button
+                            onClick={() => setActiveTab('facescan')}
+                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'facescan' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Scan size={16} /> FACE SCAN
+                        </button>
+                    </div>
                 </div>
 
                 {/* Content Area */}
@@ -567,7 +569,7 @@ const Dashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="p-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => openEditUser(u)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all">
                                                         <Edit3 size={16} />
                                                     </button>

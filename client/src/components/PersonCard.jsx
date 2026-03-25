@@ -58,7 +58,7 @@ const PersonCard = ({ person }) => {
         >
             {/* Photo Background/Overlay */}
             {person.photo_url && (
-                <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity">
+                <div className="absolute inset-0 opacity-20 md:opacity-10 md:group-hover:opacity-20 transition-opacity">
                     <AuthenticatedImage
                         src={person.photo_url}
                         alt=""
@@ -116,7 +116,7 @@ const PersonCard = ({ person }) => {
                     </div>
                     <motion.div
                         whileHover={{ x: 4 }}
-                        className="text-blue-500/40 group-hover:text-blue-500 transition-colors"
+                        className="text-blue-500 md:text-blue-500/40 md:group-hover:text-blue-500 transition-colors"
                     >
                         <ArrowRight size={20} />
                     </motion.div>

@@ -158,7 +158,7 @@ const PersonDetail = () => {
                                         <ImageIcon size={48} />
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-end justify-center pb-4">
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover/photo:opacity-100 transition-opacity flex items-end justify-center pb-4">
                                     <span className="text-[10px] font-mono uppercase text-blue-400">Primäre Identifikation</span>
                                 </div>
                             </div>
@@ -168,7 +168,7 @@ const PersonDetail = () => {
                         {activeUrls.length > 1 && (
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/5">
                                 {activeUrls.slice(1).map((url, idx) => (
-                                    <div key={`gallery-${idx}`} className="aspect-square rounded-2xl overflow-hidden border border-white/10 hover:border-blue-500/30 transition-all group/tile">
+                                    <div key={`gallery-${idx}`} className="aspect-square rounded-2xl overflow-hidden border border-blue-500/30 md:border-white/10 md:hover:border-blue-500/30 transition-all group/tile">
                                         <AuthenticatedImage
                                             src={url}
                                             alt={`${p.name} detail ${idx + 2}`}
