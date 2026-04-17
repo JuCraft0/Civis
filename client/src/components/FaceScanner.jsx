@@ -46,7 +46,7 @@ const FaceScanner = () => {
     };
 
     return (
-        <div className="bg-[#121214] border border-blue-500/20 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        <div className="bg-[#121214] border border-blue-500/20 rounded-3xl p-4 md:p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-20 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
 
             <div className="relative z-10 space-y-8">
@@ -82,7 +82,7 @@ const FaceScanner = () => {
                                 setError(null);
                             }
                         }}
-                        className="border-2 border-dashed border-white/10 rounded-3xl p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all group"
+                        className="border-2 border-dashed border-white/10 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all group"
                     >
                         <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-all pointer-events-none">
                             <Upload size={32} />

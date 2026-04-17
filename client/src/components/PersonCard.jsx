@@ -53,7 +53,7 @@ const PersonCard = ({ person }) => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             whileHover={{ y: -4, borderColor: 'rgba(59, 130, 246, 0.4)' }}
-            className="group relative bg-[#121214] border border-white/10 rounded-3xl p-6 shadow-xl transition-all overflow-hidden cursor-pointer"
+            className="group relative bg-[#121214] border border-white/10 rounded-3xl p-4 md:p-6 shadow-xl transition-all overflow-hidden cursor-pointer"
             onClick={() => navigate(`/person/${person.id}`, { state: { activeTab: 'people' } })}
         >
             {/* Photo Background/Overlay */}
@@ -89,7 +89,7 @@ const PersonCard = ({ person }) => {
                             <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></div>
                             Einträge
                         </div>
-                        <h3 className="text-2xl font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">
+                        <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">
                             {person.name}
                         </h3>
                     </div>

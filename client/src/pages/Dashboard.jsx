@@ -71,7 +71,7 @@ const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
                     </div>
                 </div>
 
-                <div className="flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                     {(user?.role === 'admin' || user?.role === 'editor') && (
                         <button
                             onClick={() => onEdit(group)}
@@ -111,7 +111,7 @@ const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
                                 >
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover/person:animate-pulse"></div>
                                     <span className="truncate flex-1">{p.name}</span>
-                                    <ArrowRight size={12} className="text-blue-500/0 group-hover/person:text-blue-500 transition-colors" />
+                                    <ArrowRight size={12} className="text-blue-500 lg:text-blue-500/0 lg:group-hover/person:text-blue-500 transition-colors" />
                                 </button>
                             ))}
                         </div>
@@ -360,12 +360,12 @@ const Dashboard = () => {
     }, [people, groupsList]);
 
     return (
-        <div className="min-h-screen bg-[#0a0a0c] text-white p-8 selection:bg-blue-500/30">
-            <div className="max-w-6xl mx-auto space-y-8">
+        <div className="min-h-screen bg-[#0a0a0c] text-white p-4 md:p-8 selection:bg-blue-500/30">
+            <div className="max-w-6xl mx-auto space-y-4 md:space-y-8">
                 {/* Header - HUD Style */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-l-4 border-blue-600 pl-6 py-2">
                     <div>
-                        <h1 className="text-4xl font-black uppercase tracking-tighter bg-gradient-to-r from-blue-400 via-white to-purple-500 bg-clip-text text-transparent">
+                        <h1 className="text-2xl md:text-4xl font-black uppercase tracking-tighter bg-gradient-to-r from-blue-400 via-white to-purple-500 bg-clip-text text-transparent">
                             Civis.OS <span className="text-xs font-mono text-blue-500/50 align-top ml-2">v2.4.1</span>
                         </h1>
                         <p className="text-gray-500 font-mono text-xs mt-1">BENUTZER: {user?.username?.toUpperCase()} // STATUS: ANGEMELDET</p>
@@ -396,12 +396,12 @@ const Dashboard = () => {
 
                 {/* Navbar/Tabs */}
                 <div className="overflow-x-auto pb-2 -mb-2 custom-scrollbar">
-                    <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10 w-max">
+                    <div className="flex gap-2 p-1 bg-white/5 rounded-2xl border border-white/10 w-max min-w-full">
                         <button
                             onClick={() => setActiveTab('people')}
                             className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'people' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                         >
-                            <Users size={16} /> PERSONEN
+                            <Users size={16} /><span className="inline md:hidden">PERS</span><span className="hidden md:inline">PERSONEN</span>
                         </button>
                         <button
                             onClick={() => setActiveTab('groups')}
@@ -529,7 +529,7 @@ const Dashboard = () => {
                     )}
 
                     {activeTab === 'users' && (
-                        <div className="bg-[#121214] border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
+                        <div className="bg-[#121214] border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-visible backdrop-blur-xl">
                             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/[0.02]">
                                 <div>
                                     <h2 className="text-xl font-black uppercase tracking-tight">Benutzerverwaltung</h2>
@@ -569,7 +569,7 @@ const Dashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="p-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                                                     <button onClick={() => openEditUser(u)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all">
                                                         <Edit3 size={16} />
                                                     </button>

@@ -2,7 +2,10 @@ name: refreshing_nicolas
 services:
   client:
     cpu_shares: 90
-    command: ["nginx", "-g", "daemon off;"]
+    command:
+      - nginx
+      - -g
+      - daemon off;
     container_name: civis-client
     depends_on:
       server:
@@ -12,7 +15,9 @@ services:
       resources:
         limits:
           memory: 16562192384
-    image: jucraft0/civis-client:latest
+        reservations:
+          devices: []
+    image: docker.io/jucraft0/civis-client:latest
     labels:
       icon: https://raw.githubusercontent.com/JuCraft0/Civis/main/client/public/logo.png
     ports:
@@ -20,12 +25,19 @@ services:
         published: "10001"
         protocol: tcp
     restart: unless-stopped
+    volumes: []
+    devices: []
+    cap_add: []
+    environment: []
     networks:
       - civis-net
+    privileged: false
 
   server:
     cpu_shares: 90
-    command: ["node", "index.js"]
+    command:
+      - node
+      - index.js
     container_name: civis-server
     depends_on:
       db:
@@ -38,46 +50,78 @@ services:
       resources:
         limits:
           memory: 16562192384
+        reservations:
+          devices: []
     environment:
       - DATABASE_URL=postgres://civis:civis@db:5432/civis
       - NODE_ENV=production
       - PORT=5005
       - FACE_AI_URL=http://face-ai:8000
-    image: jucraft0/civis-server:latest
+    image: docker.io/jucraft0/civis-server:latest
     labels:
       icon: https://raw.githubusercontent.com/JuCraft0/Civis/main/client/public/logo.png
     restart: unless-stopped
+    volumes: []
+    devices: []
+    cap_add: []
     networks:
       - civis-net
+    privileged: false
 
   db:
-    image: postgres:15-alpine
+    cpu_shares: 90
+    command: []
     container_name: civis-db
-    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 16562208768
+        reservations:
+          devices: []
     environment:
-      - POSTGRES_USER=civis
-      - POSTGRES_PASSWORD=civis
       - POSTGRES_DB=civis
+      - POSTGRES_PASSWORD=civis
+      - POSTGRES_USER=civis
+    image: docker.io/library/postgres:15-alpine
+    labels:
+      icon: https://raw.githubusercontent.com/JuCraft0/Civis/main/client/public/logo.png
+    restart: unless-stopped
     volumes:
-      - /DATA/AppData/civis/postgres:/var/lib/postgresql/data
+      - type: bind
+        source: /ZimaOS-HD/AppData/civis/postgres
+        target: /var/lib/postgresql/data
+    ports: []
+    devices: []
+    cap_add: []
     networks:
       - civis-net
+    privileged: false
 
   face-ai:
     cpu_shares: 90
+    command: []
     container_name: civis-face-ai
     deploy:
       resources:
         limits:
           memory: 4294967296
-    image: jucraft0/civis-face-ai:latest
+        reservations:
+          devices: []
+    environment: []
+    image: docker.io/jucraft0/civis-face-ai:latest
     labels:
       icon: https://raw.githubusercontent.com/JuCraft0/Civis/main/client/public/logo.png
-    volumes:
-      - deepface_weights:/root/.deepface/weights
     restart: unless-stopped
+    volumes:
+      - type: volume
+        source: deepface_weights
+        target: /root/.deepface/weights
+    ports: []
+    devices: []
+    cap_add: []
     networks:
       - civis-net
+    privileged: false
 
 networks:
   civis-net:

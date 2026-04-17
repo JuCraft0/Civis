@@ -471,7 +471,7 @@ const PersonDetail = () => {
     const inactiveModules = modules.filter(m => !m.isActive(person));
 
     return (
-        <div className="min-h-screen bg-[#0a0a0c] text-white p-8 selection:bg-blue-500/30">
+        <div className="min-h-screen bg-[#0a0a0c] text-white p-4 md:p-8 selection:bg-blue-500/30">
             <div className="max-w-4xl mx-auto space-y-8">
 
                 <motion.button onClick={() => navigate('/', { state: { activeTab } })} className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-mono text-xs uppercase group">
@@ -479,7 +479,7 @@ const PersonDetail = () => {
                     {getBackButtonText()}
                 </motion.button>
 
-                <div className="bg-[#121214] border border-white/10 rounded-3xl p-10 shadow-2xl relative overflow-visible backdrop-blur-xl">
+                <div className="bg-[#121214] border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-visible backdrop-blur-xl">
                     <div className="absolute top-0 right-0 p-40 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
                     <div className="absolute bottom-0 left-0 p-40 bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
 
@@ -502,7 +502,7 @@ const PersonDetail = () => {
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-l-4 border-blue-500 pl-6 py-2">
                                 <div>
                                     <div className="text-[10px] font-mono text-blue-500/50 uppercase tracking-[0.3em] mb-1">Stammdatei</div>
-                                    <h1 className="text-5xl font-black text-white tracking-tighter uppercase">{person.name}</h1>
+                                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase">{person.name}</h1>
                                 </div>
                                 <div className="flex gap-3">
                                     {(user?.role === 'admin' || user?.role === 'editor') && (

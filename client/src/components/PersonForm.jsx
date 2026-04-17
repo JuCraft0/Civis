@@ -549,7 +549,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         <button
             type="button"
             onClick={() => toggleModule(moduleId)}
-            className="absolute -top-1 -right-1 w-8 h-8 bg-black border border-red-500/20 hover:border-red-500/50 text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all z-20 shadow-lg"
+            className="absolute -top-1 -right-1 w-8 h-8 bg-black border border-red-500/20 hover:border-red-500/50 active:border-red-500 text-red-500 rounded-full flex items-center justify-center opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all z-20 shadow-lg"
             title="Modul entfernen"
         >
             <X size={14} />
@@ -636,7 +636,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                                     {photoPreviews[idx] ? (
                                         <div className="w-full h-full relative rounded-xl overflow-hidden">
                                             <img src={photoPreviews[idx]} alt={`Preview ${idx + 1}`} className="w-full h-full object-cover" />
-                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/tile:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                                            <div className="absolute inset-0 bg-black/60 opacity-100 lg:opacity-0 lg:group-hover/tile:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
                                                 <ImageIcon size={16} className="text-blue-400" />
                                                 <span className="text-[8px] uppercase font-bold text-white bg-blue-600/80 px-2 py-0.5 rounded-full">ERSETZEN</span>
                                             </div>
@@ -649,7 +649,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                                                     e.stopPropagation();
                                                     handlePhotoDelete(idx);
                                                 }}
-                                                className="absolute top-2 right-2 z-20 p-2 bg-red-500 hover:bg-red-400 text-white rounded-lg shadow-lg opacity-0 group-hover/tile:opacity-100 transition-all cursor-pointer border border-red-400/50"
+                                                className="absolute top-2 right-2 z-20 p-2 bg-red-500 hover:bg-red-400 text-white rounded-lg shadow-lg opacity-100 lg:opacity-0 lg:group-hover/tile:opacity-100 transition-all cursor-pointer border border-red-400/50"
                                                 title="Foto löschen"
                                             >
                                                 <Trash2 size={16} />
