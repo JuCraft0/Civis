@@ -74,6 +74,9 @@ async def analyze(photo: UploadFile = File(...)):
             "age": int(face.age),
             "gender": gender_str,
             "confidence": float(face.det_score),
+            "bbox": face.bbox.tolist(), # [x1, y1, x2, y2]
+            "width": img.shape[1],
+            "height": img.shape[0],
             "race": None, # Not supported
             "emotion": None, # Not supported
             "gender_scores": {"Man": 1.0 if face.gender == 1 else 0.0, "Woman": 1.0 if face.gender == 0 else 0.0},
@@ -110,7 +113,12 @@ async def represent(photo: UploadFile = File(...)):
         embedding = face.normed_embedding.tolist()
         
         logger.info(f"Generated embedding for face (length: {len(embedding)})")
-        return {"embedding": embedding}
+        return {
+            "embedding": embedding,
+            "bbox": face.bbox.tolist(),
+            "width": img.shape[1],
+            "height": img.shape[0]
+        }
     except HTTPException:
         raise
     except Exception as e:
@@ -164,6 +172,8 @@ async def verify(
             "threshold": THRESHOLD,
             "model": "ArcFace (buffalo_l)",
             "metric": "cosine",
+            "bbox1": f1.bbox.tolist(),
+            "bbox2": f2.bbox.tolist()
         }
     except HTTPException:
         raise
@@ -194,7 +204,8 @@ async def process(photo: UploadFile = File(...)):
                 "embedding": None,
                 "age": None,
                 "gender": None,
-                "confidence": 0
+                "confidence": 0,
+                "bbox": None
             }
 
         # Pick largest face
@@ -204,7 +215,10 @@ async def process(photo: UploadFile = File(...)):
             "embedding": face.normed_embedding.tolist(),
             "age": int(face.age),
             "gender": "Woman" if face.gender == 0 else "Man",
-            "confidence": float(face.det_score)
+            "confidence": float(face.det_score),
+            "bbox": face.bbox.tolist(),
+            "width": img.shape[1],
+            "height": img.shape[0]
         }
     except Exception as e:
         logger.error(f"/process error: {e}")

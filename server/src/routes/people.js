@@ -344,11 +344,14 @@ router.post('/:id/photo', authenticateToken, requireEditor, upload.single('photo
                     ai_metadata = JSON.stringify({
                         estimated_age: faceData.estimatedAge,
                         estimated_gender: faceData.estimatedGender,
-                        confidence: faceData.confidence
+                        confidence: faceData.confidence,
+                        bbox: faceData.bbox || null,
+                        width: faceData.width || 800,
+                        height: faceData.height || 800
                     });
                 }
 
-                // Handle multi-descriptor storage (max 5)
+                // Handle multi-descriptor storage (max 50 per user request)
                 let allDescriptors = [];
                 if (current.face_descriptor) {
                     try {
@@ -366,8 +369,8 @@ router.post('/:id/photo', authenticateToken, requireEditor, upload.single('photo
                 }
 
                 allDescriptors.push(faceData.descriptor);
-                if (allDescriptors.length > 5) {
-                    allDescriptors = allDescriptors.slice(allDescriptors.length - 5);
+                if (allDescriptors.length > 50) {
+                    allDescriptors = allDescriptors.slice(allDescriptors.length - 50);
                 }
 
                 face_descriptor = JSON.stringify(allDescriptors);
@@ -411,8 +414,18 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
         if (!req.file) return res.status(400).json({ error: "No photo provided" });
 
         // ── Stage 1: Fast approximate search via stored embeddings ─────────────
-        const queryEmbedding = await getEmbedding(req.file.buffer);
-        if (!queryEmbedding) return res.status(400).json({ error: "No face detected in the image" });
+        const queryData = await processImage(req.file.buffer);
+        if (!queryData || !queryData.descriptor) return res.status(400).json({ error: "No face detected in the image" });
+        
+        const { 
+            descriptor: queryEmbedding, 
+            estimatedAge, 
+            estimatedGender, 
+            confidence, 
+            bbox, 
+            width, 
+            height 
+        } = queryData;
 
         const peopleRows = await all("SELECT id, name, face_descriptor FROM people WHERE face_descriptor IS NOT NULL");
 
@@ -484,7 +497,19 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
 
         matches.sort((a, b) => a.distance - b.distance);
 
-        res.json({ message: "success", matches });
+        res.json({ 
+            message: "success", 
+            matches, 
+            queryEmbedding,
+            queryMetadata: {
+                age: estimatedAge,
+                gender: estimatedGender,
+                confidence,
+                bbox,
+                width,
+                height
+            }
+        });
     } catch (err) {
         console.error("Search by face error:", err);
         res.status(500).json({ error: err.message });
@@ -539,7 +564,10 @@ router.post('/reindex', authenticateToken, requireAdmin, async (req, res) => {
                             ai_metadata = JSON.stringify({
                                 estimated_age: faceData.estimatedAge,
                                 estimated_gender: faceData.estimatedGender,
-                                confidence: faceData.confidence
+                                confidence: faceData.confidence,
+                                bbox: faceData.bbox || null,
+                                width: faceData.width || 800,
+                                height: faceData.height || 800
                             });
                         }
                     }
@@ -562,6 +590,62 @@ router.post('/reindex', authenticateToken, requireAdmin, async (req, res) => {
         res.json({ message: "Re-index completed", processed: processedCount, failed: failedCount });
     } catch (err) {
         console.error("[Reindex] Fatal error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * FEEDBACK ENDPOINT (Reinforcement)
+ * Adds a confirmed embedding to a person's profile.
+ */
+router.post('/:id/feedback', authenticateToken, async (req, res) => {
+    try {
+        const personId = req.params.id;
+        const { embedding, isCorrect } = req.body;
+
+        if (!isCorrect) {
+            // Future: Log incorrect matches to a separate table for model fine-tuning
+            return res.json({ message: "Feedback received (negative)" });
+        }
+
+        if (!embedding || !Array.isArray(embedding)) {
+            return res.status(400).json({ error: "No valid embedding provided" });
+        }
+
+        const person = await get("SELECT face_descriptor FROM people WHERE id = ?", [personId]);
+        if (!person) return res.status(404).json({ error: "Person not found" });
+
+        let allDescriptors = [];
+        if (person.face_descriptor) {
+            try {
+                const parsed = JSON.parse(person.face_descriptor);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    if (Array.isArray(parsed[0])) {
+                        allDescriptors = parsed;
+                    } else {
+                        allDescriptors = [parsed];
+                    }
+                }
+            } catch (e) {
+                console.error("Error parsing descriptor during feedback:", e);
+            }
+        }
+
+        // Add the new embedding and limit to 50
+        allDescriptors.push(embedding);
+        if (allDescriptors.length > 50) {
+            allDescriptors = allDescriptors.slice(allDescriptors.length - 50);
+        }
+
+        await run(
+            'UPDATE people SET face_descriptor = ? WHERE id = ?',
+            [JSON.stringify(allDescriptors), personId]
+        );
+
+        console.log(`[Reinforcement] Added new embedding to person ${personId}. Total now: ${allDescriptors.length}`);
+        res.json({ message: "Success", total_descriptors: allDescriptors.length });
+    } catch (err) {
+        console.error("Feedback error:", err);
         res.status(500).json({ error: err.message });
     }
 });

@@ -167,14 +167,31 @@ const NetworkGraph = ({ data }) => {
                 ctx.arc(node.x, node.y, size - (1 / globalScale), 0, 2 * Math.PI);
                 ctx.clip();
 
-                // Draw image centered and scaled to fill the circle
-                const aspect = cachedImg.width / cachedImg.height;
-                let drawW = size * 2;
-                let drawH = size * 2;
-                if (aspect > 1) drawW = drawH * aspect;
-                else drawH = drawW / aspect;
+                // Advanced cropping with face centering
+                let meta = null;
+                try {
+                    meta = typeof node.ai_metadata === 'string' ? JSON.parse(node.ai_metadata) : node.ai_metadata;
+                } catch (e) {}
 
-                ctx.drawImage(cachedImg, node.x - drawW / 2, node.y - drawH / 2, drawW, drawH);
+                const sSize = Math.min(cachedImg.naturalWidth, cachedImg.naturalHeight);
+                let sx, sy;
+
+                if (meta && meta.bbox && meta.width && meta.height) {
+                    // Convert metadata bbox to actual image dimensions
+                    const scaleX = cachedImg.naturalWidth / meta.width;
+                    const scaleY = cachedImg.naturalHeight / meta.height;
+                    const [x1, y1, x2, y2] = meta.bbox;
+                    const faceCX = ((x1 + x2) / 2) * scaleX;
+                    const faceCY = ((y1 + y2) / 2) * scaleY;
+
+                    sx = Math.max(0, Math.min(cachedImg.naturalWidth - sSize, faceCX - sSize / 2));
+                    sy = Math.max(0, Math.min(cachedImg.naturalHeight - sSize, faceCY - sSize / 2));
+                } else {
+                    sx = (cachedImg.naturalWidth - sSize) / 2;
+                    sy = (cachedImg.naturalHeight - sSize) / 2;
+                }
+
+                ctx.drawImage(cachedImg, sx, sy, sSize, sSize, node.x - size, node.y - size, size * 2, size * 2);
                 ctx.restore();
 
                 // Overlay subtle scanlines or brightness on image if hovered

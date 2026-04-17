@@ -38,7 +38,12 @@ async function getEmbedding(imageBuffer) {
     }
 
     const data = await response.json();
-    return data.embedding || null;
+    return {
+        embedding: data.embedding || null,
+        bbox: data.bbox || null,
+        width: data.width || null,
+        height: data.height || null
+    };
 }
 
 /**
@@ -69,7 +74,7 @@ async function analyzeImage(imageBuffer) {
  * Call the /verify endpoint for precise 1:1 comparison.
  * @param {Buffer} buf1
  * @param {Buffer} buf2
- * @returns {Promise<{ verified: boolean, distance: number, threshold: number } | null>}
+ * @returns {Promise<{ verified: boolean, distance: number, threshold: number, bbox1: number[], bbox2: number[] } | null>}
  */
 async function verifyFaces(buf1, buf2) {
     const form = new FormData();
@@ -118,7 +123,7 @@ function calculateSimilarity(d1, d2) {
  * High-level wrapper: get both the embedding and the AI analysis in one call.
  * Drop-in compatible with the old Human.js processImage() function.
  * @param {Buffer} imageBuffer
- * @returns {Promise<{ descriptor: number[], estimatedAge: number, estimatedGender: string, confidence: number } | null>}
+ * @returns {Promise<{ descriptor: number[], estimatedAge: number, estimatedGender: string, confidence: number, bbox: number[] } | null>}
  */
 async function processImage(imageBuffer) {
     try {
@@ -154,6 +159,9 @@ async function processImage(imageBuffer) {
             estimatedAge,
             estimatedGender,
             confidence: data.confidence || 1.0,
+            bbox: data.bbox || null,
+            width: data.width || null,
+            height: data.height || null,
             race: null, // InsightFace does not support race
             emotion: null, // InsightFace does not support emotion
         };

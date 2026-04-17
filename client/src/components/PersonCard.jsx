@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
-const AuthenticatedImage = ({ src, alt, className }) => {
+const AuthenticatedImage = ({ src, alt, className, style = {} }) => {
     const [imageSrc, setImageSrc] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -40,11 +40,31 @@ const AuthenticatedImage = ({ src, alt, className }) => {
     if (loading) return <div className={`${className} bg-white/5 animate-pulse`} />;
     if (!imageSrc) return <div className={`${className} bg-white/5 flex items-center justify-center`}><ImageIcon size={24} /></div>;
 
-    return <img src={imageSrc} alt={alt} className={className} />;
+    return <img src={imageSrc} alt={alt} className={className} style={style} />;
 };
 
 const PersonCard = ({ person }) => {
     const navigate = useNavigate();
+
+    const getFacePosition = (aiMetadata) => {
+        if (!aiMetadata) return 'center';
+        try {
+            const meta = typeof aiMetadata === 'string' ? JSON.parse(aiMetadata) : aiMetadata;
+            if (meta.bbox && meta.width && meta.height) {
+                const [x1, y1, x2, y2] = meta.bbox;
+                const centerX = ((x1 + x2) / 2 / meta.width) * 100;
+                const centerY = ((y1 + y2) / 2 / meta.height) * 100;
+                return `${centerX}% ${centerY}%`;
+            }
+        } catch (e) {
+            return 'center';
+        }
+        return 'center';
+    };
+
+    const faceStyle = {
+        objectPosition: getFacePosition(person.ai_metadata)
+    };
 
     return (
         <motion.div
@@ -63,6 +83,7 @@ const PersonCard = ({ person }) => {
                         src={person.photo_url}
                         alt=""
                         className="w-full h-full object-cover filter grayscale blur-sm"
+                        style={faceStyle}
                     />
                 </div>
             )}
@@ -77,6 +98,7 @@ const PersonCard = ({ person }) => {
                                 src={person.photo_url}
                                 alt={person.name}
                                 className="w-full h-full object-cover"
+                                style={faceStyle}
                             />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-gray-700">

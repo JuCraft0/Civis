@@ -1,17 +1,27 @@
-import React, { useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Scan, Upload, Loader, User, Search, X, AlertCircle } from 'lucide-react';
-import { searchByFace } from '../services/api';
+import { CheckCircle2, XCircle, Scan, Upload, Loader, User, Search, X, AlertCircle } from 'lucide-react';
+import { searchByFace, submitFeedback } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 
 const FaceScanner = () => {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [isScanning, setIsScanning] = useState(false);
     const [results, setResults] = useState(null);
+    const [queryEmbedding, setQueryEmbedding] = useState(null);
+    const [queryMetadata, setQueryMetadata] = useState(null);
+    const [feedbackSent, setFeedbackSent] = useState({}); // { personId: true }
     const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
     const navigate = useNavigate();
+
+    const getFacePosition = (meta) => {
+        if (!meta || !meta.bbox || !meta.width || !meta.height) return 'center';
+        const [x1, y1, x2, y2] = meta.bbox;
+        const centerX = ((x1 + x2) / 2 / meta.width) * 100;
+        const centerY = ((y1 + y2) / 2 / meta.height) * 100;
+        return `${centerX}% ${centerY}%`;
+    };
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -19,6 +29,7 @@ const FaceScanner = () => {
             setFile(selectedFile);
             setPreview(URL.createObjectURL(selectedFile));
             setResults(null);
+            setQueryMetadata(null);
             setError(null);
         }
     };
@@ -27,9 +38,12 @@ const FaceScanner = () => {
         if (!file) return;
         setIsScanning(true);
         setError(null);
+        setFeedbackSent({});
         try {
             const response = await searchByFace(file);
             setResults(response.matches || []);
+            setQueryEmbedding(response.queryEmbedding || null);
+            setQueryMetadata(response.queryMetadata || null);
         } catch (err) {
             setError(err.response?.data?.error || "Fehler beim Gesichtsscan");
             console.error(err);
@@ -38,10 +52,29 @@ const FaceScanner = () => {
         }
     };
 
+    const handleFeedback = async (e, personId, isCorrect) => {
+        e.stopPropagation(); // Don't navigate to person detail
+        if (!queryEmbedding) return;
+
+        try {
+            await submitFeedback(personId, queryEmbedding, isCorrect);
+            setFeedbackSent(prev => ({ ...prev, [personId]: true }));
+            if (isCorrect) {
+                 toast.success('Gesicht verifiziert - System lernt...');
+            } else {
+                 toast('Feedback erhalten', { icon: 'ℹ️' });
+            }
+        } catch (err) {
+            console.error("Feedback error:", err);
+            toast.error("Feedback konnte nicht gesendet werden");
+        }
+    };
+
     const reset = () => {
         setFile(null);
         setPreview(null);
         setResults(null);
+        setQueryMetadata(null);
         setError(null);
     };
 
@@ -144,25 +177,73 @@ const FaceScanner = () => {
                                         </div>
                                     </div>
                                 ) : results ? (
-                                    results.length > 0 ? (
-                                        results.map((result, idx) => {
-                                            const matchPercent = Math.max(0, Math.min(100, (1 - result.distance) * 100)).toFixed(1);
-                                            return (
-                                                <motion.div
-                                                    key={result.person.id}
-                                                    initial={{ opacity: 0, x: 20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    transition={{ delay: idx * 0.1 }}
-                                                    onClick={() => navigate(`/person/${result.person.id}`, { state: { activeTab: 'facescan' } })}
-                                                    className="bg-white/5 border border-white/10 hover:border-blue-500/40 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group/result"
-                                                >
-                                                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
-                                                        {result.person.photo_url ? (
-                                                            <img
-                                                                src={`/${result.person.photo_url}`}
-                                                                alt={result.person.name}
-                                                                className="w-full h-full object-cover"
-                                                            />
+                                    <>
+                                        {/* Main Identifier Box */}
+                                        {queryMetadata && (
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 mb-4"
+                                            >
+                                                <div className="text-[9px] font-mono text-blue-400 uppercase tracking-widest mb-3 flex items-center justify-between">
+                                                    <span>Identifizierte Merkmale</span>
+                                                    <span className="bg-blue-500/20 px-1.5 py-0.5 rounded text-[8px]">Scan-Analyse</span>
+                                                </div>
+                                                <div className="flex gap-4 items-center">
+                                                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-500/20 bg-black/40 relative">
+                                                        <img 
+                                                            src={preview} 
+                                                            alt="Detected Face"
+                                                            className="w-full h-full object-cover" 
+                                                            style={{
+                                                                objectPosition: getFacePosition(queryMetadata)
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4 flex-1">
+                                                        <div>
+                                                            <div className="text-[8px] font-mono text-gray-500 uppercase">Alter (Est.)</div>
+                                                            <div className="text-sm font-black text-white">{queryMetadata.age || '??'} <span className="text-[9px] font-normal text-gray-500">J.</span></div>
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-[8px] font-mono text-gray-500 uppercase">Geschlecht</div>
+                                                            <div className="text-sm font-black text-white uppercase">{queryMetadata.gender || '??'}</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {results.length > 0 ? (
+                                            results.map((result, idx) => {
+                                                const matchPercent = Math.max(0, Math.min(100, (1 - result.distance) * 100)).toFixed(1);
+                                                const personPhotoUrl = result.person.photo_url 
+                                                    ? (result.person.photo_url.startsWith('http') ? result.person.photo_url : `${window.location.origin}${result.person.photo_url.startsWith('/') ? '' : '/'}${result.person.photo_url}`)
+                                                    : null;
+                                                
+                                                return (
+                                                    <motion.div
+                                                        key={result.person.id}
+                                                        initial={{ opacity: 0, x: 20 }}
+                                                        animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ delay: idx * 0.1 }}
+                                                        onClick={() => navigate(`/person/${result.person.id}`, { state: { activeTab: 'facescan' } })}
+                                                        className="bg-white/5 border border-white/10 hover:border-blue-500/40 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group/result"
+                                                    >
+                                                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
+                                                            {personPhotoUrl ? (
+                                                                <img
+                                                                    src={personPhotoUrl}
+                                                                    alt={result.person.name}
+                                                                    className="w-full h-full object-cover"
+                                                                    style={{
+                                                                        objectPosition: getFacePosition(result.person.ai_metadata)
+                                                                    }}
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = '/placeholder-face.png';
+                                                                    }}
+                                                                />
                                                         ) : (
                                                             <div className="w-full h-full bg-white/5 flex items-center justify-center text-gray-700">
                                                                 <User size={20} />
@@ -170,30 +251,60 @@ const FaceScanner = () => {
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                            <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
-                                                            {idx === 0 && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0">TOP</span>}
-                                                            {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0">✓ VERIFIZIERT</span>}
-                                                        </div>
-                                                        <div className="flex items-center gap-2 mt-1">
-                                                            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                                <div
-                                                                    className="h-full bg-blue-500"
-                                                                    style={{ width: `${matchPercent}%` }}
-                                                                />
+                                                        <div className="flex items-center justify-between gap-2">
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                                    <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
+                                                                    {idx === 0 && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0">TOP</span>}
+                                                                    {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0">✓ VERIFIZIERT</span>}
+                                                                </div>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                                                        <div
+                                                                            className="h-full bg-blue-500"
+                                                                            style={{ width: `${matchPercent}%` }}
+                                                                        />
+                                                                    </div>
+                                                                    <span className="text-[9px] font-mono text-blue-500 font-bold">{matchPercent}%</span>
+                                                                </div>
                                                             </div>
-                                                            <span className="text-[9px] font-mono text-blue-500 font-bold">{matchPercent}%</span>
+                                                            
+                                                            {/* Feedback Buttons */}
+                                                            <div className="flex items-center gap-1">
+                                                                {feedbackSent[result.person.id] ? (
+                                                                    <div className="text-[8px] font-mono text-green-500 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
+                                                                        GESPEICHERT
+                                                                    </div>
+                                                                ) : (
+                                                                    <>
+                                                                        <button 
+                                                                            onClick={(e) => handleFeedback(e, result.person.id, true)}
+                                                                            className="p-2 hover:bg-green-500/20 text-gray-500 hover:text-green-400 rounded-lg transition-all"
+                                                                            title="Richtig"
+                                                                        >
+                                                                            <CheckCircle2 size={18} />
+                                                                        </button>
+                                                                        <button 
+                                                                            onClick={(e) => handleFeedback(e, result.person.id, false)}
+                                                                            className="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg transition-all"
+                                                                            title="Falsch"
+                                                                        >
+                                                                            <XCircle size={18} />
+                                                                        </button>
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </motion.div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-600 gap-4">
-                                            <Search size={40} className="opacity-20" />
-                                            <p className="text-xs font-mono uppercase tracking-widest">Keine Übereinstimmung gefunden</p>
-                                        </div>
-                                    )
+                                            ))
+                                        ) : (
+                                            <div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-600 gap-4">
+                                                <Search size={40} className="opacity-20" />
+                                                <p className="text-xs font-mono uppercase tracking-widest">Keine Übereinstimmung gefunden</p>
+                                            </div>
+                                        )}
+                                    </>
                                 ) : error ? (
                                     <div className="flex flex-col items-center justify-center h-full py-12 text-center text-red-500 gap-4 bg-red-500/5 rounded-3xl border border-red-500/10">
                                         <AlertCircle size={40} className="opacity-50" />

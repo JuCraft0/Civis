@@ -96,6 +96,11 @@ export const reindexFaces = async () => {
     return response.data;
 };
 
+export const submitFeedback = async (id, embedding, isCorrect) => {
+    const response = await api.post(`/people/${id}/feedback`, { embedding, isCorrect });
+    return response.data;
+};
+
 // Admin Functions
 export const createUser = async (userData) => {
     const response = await api.post('/users', userData);
