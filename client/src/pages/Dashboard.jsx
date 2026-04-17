@@ -71,7 +71,7 @@ const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
                     </div>
                 </div>
 
-                <div className="flex gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                <div className="flex gap-2 opacity-100 transition-opacity">
                     {(user?.role === 'admin' || user?.role === 'editor') && (
                         <button
                             onClick={() => onEdit(group)}
@@ -111,7 +111,7 @@ const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
                                 >
                                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 group-hover/person:animate-pulse"></div>
                                     <span className="truncate flex-1">{p.name}</span>
-                                    <ArrowRight size={12} className="text-blue-500 lg:text-blue-500/0 lg:group-hover/person:text-blue-500 transition-colors" />
+                                    <ArrowRight size={12} className="text-blue-500 transition-colors" />
                                 </button>
                             ))}
                         </div>
@@ -569,7 +569,7 @@ const Dashboard = () => {
                                                 </span>
                                             </td>
                                             <td className="p-6 text-right">
-                                                <div className="flex justify-end gap-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                                                <div className="flex justify-end gap-2 opacity-100 transition-opacity">
                                                     <button onClick={() => openEditUser(u)} className="p-2 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all">
                                                         <Edit3 size={16} />
                                                     </button>
