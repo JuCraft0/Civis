@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies needed for OpenCV
+# Install system dependencies needed for OpenCV and InsightFace
 RUN apt-get update && apt-get install -y \
     libglib2.0-0 \
     libsm6 \
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgl1 \
     libgomp1 \
+    libatlas-base-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -17,9 +18,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 
-# DeepFace downloads models to ~/.deepface on first run.
+# InsightFace downloads models to ~/.insightface on first run.
 # We expose this path as a volume so models persist across restarts.
-VOLUME ["/root/.deepface/weights"]
+VOLUME ["/root/.insightface/models"]
 
 EXPOSE 8000
 

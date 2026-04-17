@@ -507,4 +507,63 @@ router.get('/photo/:photoId', async (req, res) => {
     }
 });
 
+// REINDEX ALL PEOPLE (Admin only)
+router.post('/reindex', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        console.log('[Reindex] Starting full database re-index...');
+        // Get all people who have photos
+        const peopleList = await all("SELECT id, name FROM people");
+        let processedCount = 0;
+        let failedCount = 0;
+
+        for (const person of peopleList) {
+            try {
+                // Get all photos for this person
+                const { rows: photos } = await pool.query(
+                    'SELECT photo_data FROM person_photos WHERE person_id = $1 ORDER BY id ASC',
+                    [person.id]
+                );
+
+                if (photos.length === 0) continue;
+
+                let allDescriptors = [];
+                let ai_metadata = null;
+
+                for (let i = 0; i < photos.length; i++) {
+                    const faceData = await processImage(photos[i].photo_data);
+                    if (faceData && faceData.descriptor) {
+                        allDescriptors.push(faceData.descriptor);
+                        
+                        // Use first valid face for primary metadata
+                        if (!ai_metadata) {
+                            ai_metadata = JSON.stringify({
+                                estimated_age: faceData.estimatedAge,
+                                estimated_gender: faceData.estimatedGender,
+                                confidence: faceData.confidence
+                            });
+                        }
+                    }
+                }
+
+                if (allDescriptors.length > 0) {
+                    await run(
+                        'UPDATE people SET face_descriptor = ?, ai_metadata = ? WHERE id = ?',
+                        [JSON.stringify(allDescriptors), ai_metadata, person.id]
+                    );
+                    processedCount++;
+                }
+            } catch (err) {
+                console.error(`[Reindex] Failed to process person ${person.id} (${person.name}):`, err.message);
+                failedCount++;
+            }
+        }
+
+        console.log(`[Reindex] Completed. Processed: ${processedCount}, Failed: ${failedCount}`);
+        res.json({ message: "Re-index completed", processed: processedCount, failed: failedCount });
+    } catch (err) {
+        console.error("[Reindex] Fatal error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

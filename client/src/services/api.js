@@ -91,6 +91,11 @@ export const analyzeFace = async (file) => {
     return response.data;
 };
 
+export const reindexFaces = async () => {
+    const response = await api.post('/people/reindex');
+    return response.data;
+};
+
 // Admin Functions
 export const createUser = async (userData) => {
     const response = await api.post('/users', userData);

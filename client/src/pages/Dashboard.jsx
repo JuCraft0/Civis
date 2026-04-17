@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Loader, LogOut, Shield, Users, FolderTree, Trash2, Edit3, ChevronRight, ChevronDown, LayoutGrid, ArrowRight, Share2, Scan } from 'lucide-react';
+import { Plus, Search, Loader, LogOut, Shield, Users, FolderTree, Trash2, Edit3, ChevronRight, ChevronDown, LayoutGrid, ArrowRight, Share2, Scan, Database } from 'lucide-react';
 import PersonCard from '../components/PersonCard';
 import PersonForm from '../components/PersonForm';
 import UserForm from '../components/UserForm';
 import NetworkGraph from '../components/NetworkGraph';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup } from '../services/api';
+import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HUDSelect from '../components/HUDSelect';
 import { getGenderedStatus } from '../utils/statusHelpers';
@@ -159,6 +159,7 @@ const Dashboard = () => {
     const [groupFormState, setGroupFormState] = useState({ mode: 'create', data: { name: '', description: '', parent_id: '' } });
     const [userFormState, setUserFormState] = useState({ mode: 'create', data: null });
     const [toast, setToast] = useState({ message: '', type: 'success' });
+    const [reindexing, setReindexing] = useState(false);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
 
@@ -259,6 +260,27 @@ const Dashboard = () => {
             fetchUsers();
         } catch (error) {
             setToast({ message: error.response?.data?.error || "Fehler beim Speichern des Benutzers", type: 'error' });
+        }
+    };
+
+    const handleReindex = async () => {
+        if (!window.confirm("Möchten Sie wirklich alle Gesichter neu indexieren? Dies ist notwendig nach einem System-Upgrade und kann einige Zeit dauern.")) return;
+        
+        setReindexing(true);
+        setToast({ message: "Re-Indexierung gestartet... Bitte warten.", type: "success" });
+        
+        try {
+            const result = await reindexFaces();
+            setToast({ 
+                message: `Re-Indexierung abgeschlossen! ${result.processed} Personen verarbeitet.`, 
+                type: "success" 
+            });
+            fetchPeople(); // Refresh data
+        } catch (error) {
+            console.error("Reindex error:", error);
+            setToast({ message: "Fehler während der Re-Indexierung", type: "error" });
+        } finally {
+            setReindexing(false);
         }
     };
 
@@ -535,15 +557,29 @@ const Dashboard = () => {
                                     <h2 className="text-xl font-black uppercase tracking-tight">Benutzerverwaltung</h2>
                                     <p className="text-gray-500 text-xs font-mono">LISTE DER BERECHTIGTEN BENUTZER</p>
                                 </div>
-                                <button
-                                    onClick={() => {
-                                        setUserFormState({ mode: 'create', data: null });
-                                        setShowUserForm(true);
-                                    }}
-                                    className="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/20 px-4 py-2 rounded-lg transition-all font-bold uppercase"
-                                >
-                                    + Benutzer hinzufügen
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleReindex}
+                                        disabled={reindexing}
+                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
+                                            reindexing 
+                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
+                                            : 'bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border-orange-500/20'
+                                        }`}
+                                    >
+                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <Database size={16} />}
+                                        {reindexing ? 'Indexiere...' : 'Alles Neu Indexieren'}
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setUserFormState({ mode: 'create', data: null });
+                                            setShowUserForm(true);
+                                        }}
+                                        className="text-xs bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 border border-purple-500/20 px-4 py-2 rounded-lg transition-all font-bold uppercase"
+                                    >
+                                        + Benutzer hinzufügen
+                                    </button>
+                                </div>
                             </div>
                             <table className="w-full text-left">
                                 <thead className="bg-white/5 text-gray-400 text-[10px] uppercase tracking-[0.2em] font-mono">

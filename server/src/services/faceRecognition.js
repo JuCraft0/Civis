@@ -122,28 +122,40 @@ function calculateSimilarity(d1, d2) {
  */
 async function processImage(imageBuffer) {
     try {
-        const [embedding, analysis] = await Promise.all([
-            getEmbedding(imageBuffer),
-            analyzeImage(imageBuffer),
-        ]);
+        const form = new FormData();
+        form.append('photo', imageBuffer, { filename: 'photo.jpg', contentType: 'image/jpeg' });
 
-        if (!embedding) {
+        const response = await fetch(`${FACE_AI_URL}/process`, {
+            method: 'POST',
+            body: form,
+            headers: form.getHeaders(),
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            console.error(`[face-ai] /process failed (${response.status}): ${err}`);
+            return null;
+        }
+
+        const data = await response.json();
+
+        if (!data.embedding) {
             console.log('[face-ai] No face embedding returned — face likely not detected.');
             return null;
         }
 
-        const estimatedAge = analysis?.age ?? null;
-        const estimatedGender = analysis?.gender?.toLowerCase() ?? null;
+        const estimatedAge = data.age ?? null;
+        const estimatedGender = data.gender?.toLowerCase() ?? null;
 
-        console.log(`[face-ai] Detected: Age ~${estimatedAge}, Gender ${estimatedGender}`);
+        console.log(`[face-ai] Detected: Age ~${estimatedAge}, Gender ${estimatedGender} (Confidence: ${data.confidence?.toFixed(2)})`);
 
         return {
-            descriptor: embedding,
+            descriptor: data.embedding,
             estimatedAge,
             estimatedGender,
-            confidence: 1.0, // DeepFace doesn't return a detection confidence score directly
-            race: analysis?.race ?? null,
-            emotion: analysis?.emotion ?? null,
+            confidence: data.confidence || 1.0,
+            race: null, // InsightFace does not support race
+            emotion: null, // InsightFace does not support emotion
         };
     } catch (err) {
         console.error('[face-ai] processImage error:', err.message);
