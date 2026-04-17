@@ -1,3 +1,5 @@
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { CheckCircle2, XCircle, Scan, Upload, Loader, User, Search, X, AlertCircle } from 'lucide-react';
 import { searchByFace, submitFeedback } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -297,8 +299,9 @@ const FaceScanner = () => {
                                                         </div>
                                                     </div>
                                                 </motion.div>
-                                            ))
-                                        ) : (
+                                            );
+                                        })
+                                    ) : (
                                             <div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-600 gap-4">
                                                 <Search size={40} className="opacity-20" />
                                                 <p className="text-xs font-mono uppercase tracking-widest">Keine Übereinstimmung gefunden</p>
