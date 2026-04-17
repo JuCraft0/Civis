@@ -218,7 +218,12 @@ const FaceScanner = () => {
 
                                         {results.length > 0 ? (
                                             results.map((result, idx) => {
+                                                // Calculate a more user-friendly match percentage
+                                                // InsightFace cosine distance: 0 = perfect, 0.4 = strong, 0.6 = possible
                                                 const matchPercent = Math.max(0, Math.min(100, (1 - result.distance) * 100)).toFixed(1);
+                                                const isStrongMatch = result.distance < 0.5;
+                                                const isPotentialMatch = result.distance >= 0.5 && result.distance < 0.65;
+                                                
                                                 const personPhotoUrl = result.person.photo_url 
                                                     ? (result.person.photo_url.startsWith('http') ? result.person.photo_url : `${window.location.origin}${result.person.photo_url.startsWith('/') ? '' : '/'}${result.person.photo_url}`)
                                                     : null;
@@ -230,7 +235,7 @@ const FaceScanner = () => {
                                                         animate={{ opacity: 1, x: 0 }}
                                                         transition={{ delay: idx * 0.1 }}
                                                         onClick={() => navigate(`/person/${result.person.id}`, { state: { activeTab: 'facescan' } })}
-                                                        className="bg-white/5 border border-white/10 hover:border-blue-500/40 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group/result"
+                                                        className={`bg-white/5 border border-white/10 hover:border-blue-500/40 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group/result ${isStrongMatch ? 'ring-1 ring-green-500/10' : ''}`}
                                                     >
                                                         <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 flex-shrink-0">
                                                             {personPhotoUrl ? (
@@ -257,17 +262,18 @@ const FaceScanner = () => {
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-center gap-2 flex-wrap mb-1">
                                                                     <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
-                                                                    {idx === 0 && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0">TOP</span>}
-                                                                    {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0">✓ VERIFIZIERT</span>}
+                                                                    {idx === 0 && isStrongMatch && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0 uppercase">Best Match</span>}
+                                                                    {isPotentialMatch && <span className="px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500/70 text-[9px] rounded font-mono border border-yellow-500/20 flex-shrink-0 uppercase">Möglich</span>}
+                                                                    {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0 uppercase">✓ Verifiziert</span>}
                                                                 </div>
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
                                                                         <div
-                                                                            className="h-full bg-blue-500"
+                                                                            className={`h-full transition-all duration-1000 ${isStrongMatch ? 'bg-green-500' : 'bg-yellow-500/50'}`}
                                                                             style={{ width: `${matchPercent}%` }}
                                                                         />
                                                                     </div>
-                                                                    <span className="text-[9px] font-mono text-blue-500 font-bold">{matchPercent}%</span>
+                                                                    <span className={`text-[9px] font-mono font-bold ${isStrongMatch ? 'text-green-500' : 'text-yellow-500/70'}`}>{matchPercent}%</span>
                                                                 </div>
                                                             </div>
                                                             

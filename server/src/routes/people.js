@@ -456,38 +456,56 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
             }
         }
 
-        // Sort by distance and take top 10
+        // Sort by distance and take top 15 candidates
         candidates.sort((a, b) => a.stage1Distance - b.stage1Distance);
-        const top10 = candidates.slice(0, 10);
+        const topCandidates = candidates.slice(0, 15);
 
-        // ── Stage 2: Precise verification using DeepFace.verify ───────────────
+        // ── Stage 2: Precise verification against multiple photos ──────────────
         const matches = [];
-        for (const candidate of top10) {
+        for (const candidate of topCandidates) {
             try {
-                // Load that person's primary photo from DB
+                // Load up to 3 photos for this person to increase detection robustness
+                // Using multiple photos helps if one angle or lighting condition is poor
                 const { rows: photos } = await pool.query(
-                    'SELECT photo_data FROM person_photos WHERE person_id = $1 ORDER BY id ASC LIMIT 1',
+                    'SELECT photo_data FROM person_photos WHERE person_id = $1 ORDER BY id ASC LIMIT 3',
                     [candidate.id]
                 );
 
                 if (!photos || photos.length === 0) {
-                    console.log(`[Stage 2] No photo found for person ${candidate.id}, skipping verify`);
                     continue;
                 }
 
-                const storedPhotoBuffer = photos[0].photo_data;
-                const verifyResult = await verifyFaces(req.file.buffer, storedPhotoBuffer);
+                let bestVerifyResult = null;
+                let minDistance = Infinity;
 
-                console.log(`[Stage 2] ${candidate.name} (ID: ${candidate.id}) - verified: ${verifyResult?.verified}, distance: ${verifyResult?.distance?.toFixed(4)}`);
+                // Test against multiple photos and pick the best match
+                for (const photo of photos) {
+                    try {
+                        const verifyResult = await verifyFaces(req.file.buffer, photo.photo_data);
+                        if (verifyResult && verifyResult.distance < minDistance) {
+                            minDistance = verifyResult.distance;
+                            bestVerifyResult = verifyResult;
+                        }
+                    } catch (innerErr) {
+                        // Ignore individual photo processing errors
+                    }
+                }
 
-                if (verifyResult && (verifyResult.verified || verifyResult.distance < 0.55)) {
+                if (bestVerifyResult) {
+                    console.log(`[Stage 2] ${candidate.name} (ID: ${candidate.id}) - Best Distance: ${minDistance.toFixed(4)}`);
+                }
+
+                // Thresholds:
+                // < 0.50: Very likely match (Verified)
+                // 0.50 - 0.65: Potential match (Show in UI)
+                if (bestVerifyResult && minDistance < 0.65) {
                     const fullPerson = await getFullPerson(candidate.id);
                     matches.push({
                         person: fullPerson,
-                        distance: verifyResult.distance,
+                        distance: minDistance,
                         stage1Distance: candidate.stage1Distance,
-                        verified: verifyResult.verified,
-                        is_near_match: !verifyResult.verified && verifyResult.distance < 0.55
+                        verified: minDistance < 0.50,
+                        is_near_match: minDistance >= 0.50 && minDistance < 0.65
                     });
                 }
             } catch (e) {
