@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Install system dependencies needed for OpenCV and InsightFace
 RUN apt-get update && apt-get install -y \
+    build-essential \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
