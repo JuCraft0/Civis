@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe, Brain } from 'lucide-react';
+import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe, Brain, RefreshCw } from 'lucide-react';
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPerson, updatePerson, deletePerson, uploadPhoto } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -68,6 +68,7 @@ const PersonDetail = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [toast, setToast] = useState({ message: '', type: 'success' });
     const [focusedModule, setFocusedModule] = useState(null);
+    const [isSyncing, setIsSyncing] = useState(false);
 
     const fetchData = async () => {
         try {
@@ -112,6 +113,22 @@ const PersonDetail = () => {
             navigate('/', { state: { activeTab } });
         } catch (error) {
             console.error("Failed to delete person", error);
+        }
+    };
+
+    const handleSyncImmich = async () => {
+        if (!person?.immich_person_id) return;
+        try {
+            setIsSyncing(true);
+            setToast({ message: 'Synchronisation gestartet...', type: 'info' });
+            const response = await syncImmichPerson(id);
+            setToast({ message: `Erfolgreich synchronisiert: ${response.descriptorsAdded} Gesichter hinzugefügt`, type: 'success' });
+            fetchData();
+        } catch (error) {
+            console.error("Immich sync failed", error);
+            setToast({ message: 'Synchronisation fehlgeschlagen', type: 'error' });
+        } finally {
+            setIsSyncing(false);
         }
     };
 
@@ -505,6 +522,11 @@ const PersonDetail = () => {
                                     <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase">{person.name}</h1>
                                 </div>
                                 <div className="flex gap-3">
+                                    {person.immich_person_id && (user?.role === 'admin' || user?.role === 'editor') && (
+                                        <button onClick={handleSyncImmich} disabled={isSyncing} className="p-4 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-full text-cyan-400 border border-cyan-500/20 transition-all shadow-lg flex items-center justify-center relative" title="Mit Immich synchronisieren">
+                                            {isSyncing ? <Loader size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+                                        </button>
+                                    )}
                                     {(user?.role === 'admin' || user?.role === 'editor') && (
                                         <button onClick={() => setIsEditing(true)} className="p-4 bg-white/5 hover:bg-white/10 rounded-full text-blue-400 border border-white/10 transition-all shadow-lg"><Edit3 size={20} /></button>
                                     )}

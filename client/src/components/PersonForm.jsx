@@ -230,6 +230,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         partners: [],
         social: [],
         online_profiles: [],
+        immich_person_id: '',
         photo_url: '',
         photo_urls: []
     });
@@ -261,7 +262,8 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
             { id: 'family', label: 'Familie', icon: Users },
             { id: 'partners', label: 'Beziehung/Partner', icon: Users },
             { id: 'social', label: 'Soziales Umfeld', icon: Users },
-            { id: 'online_profiles', label: 'Online-Profile', icon: Globe }
+            { id: 'online_profiles', label: 'Online-Profile', icon: Globe },
+            { id: 'immich_person_id', label: 'Immich Integration', icon: Scan }
         ]
     };
 
@@ -334,6 +336,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                 partners: initialData.partners || [],
                 social: initialData.social || [],
                 online_profiles: initialData.online_profiles || [],
+                immich_person_id: initialData.immich_person_id || '',
                 photo_url: initialData.photo_url || '',
                 photo_urls: initialData.photo_urls || []
             }));
@@ -349,6 +352,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
             if (initialData.partners && initialData.partners.length > 0) initialActive.push('partners');
             if (initialData.social && initialData.social.length > 0) initialActive.push('social');
             if (initialData.online_profiles && initialData.online_profiles.length > 0) initialActive.push('online_profiles');
+            if (initialData.immich_person_id) initialActive.push('immich_person_id');
             if (initialData.additional_info) initialActive.push('additional_info');
 
             if (initialData.photo_url || (initialData.photo_urls && initialData.photo_urls.filter(u => u).length > 0)) {
@@ -507,6 +511,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         if (!activeModules.includes('partners')) finalData.partners = [];
         if (!activeModules.includes('social')) finalData.social = [];
         if (!activeModules.includes('online_profiles')) finalData.online_profiles = [];
+        if (!activeModules.includes('immich_person_id')) finalData.immich_person_id = '';
         if (!activeModules.includes('additional_info')) finalData.additional_info = '';
         if (!activeModules.includes('photo')) {
             finalData.photo_url = '';
@@ -994,6 +999,22 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                                 <Plus size={14} /> Profil hinzufügen
                             </button>
                         </div>
+                    </motion.div>
+                )}
+
+                {/* Immich Integration Section */}
+                {activeModules.includes('immich_person_id') && (
+                    <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative group space-y-2 p-1">
+                        {renderRemoveButton('immich_person_id')}
+                        <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest block mb-2">Immich Person ID</label>
+                        <input
+                            type="text"
+                            name="immich_person_id"
+                            value={formData.immich_person_id}
+                            onChange={handleChange}
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all font-mono text-sm"
+                            placeholder="Z.B. a1b2c3d4-e5f6-..."
+                        />
                     </motion.div>
                 )}
 

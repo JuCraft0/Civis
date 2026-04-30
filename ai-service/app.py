@@ -160,8 +160,8 @@ async def verify(
         distance = 1.0 - float(sim)
         
         # Standard threshold for ArcFace (InsightFace) is around 0.4 - 0.6 for cosine distance.
-        # We use 0.5 as a balanced default.
-        THRESHOLD = 0.5
+        # We use 0.4 as a strict threshold for high accuracy.
+        THRESHOLD = 0.40
         verified = distance < THRESHOLD
 
         logger.info(f"Verification result: {verified} (distance: {distance:.4f}, threshold: {THRESHOLD})")

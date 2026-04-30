@@ -72,6 +72,7 @@ async function initDB(retries = 5) {
             online_profiles TEXT,
             ai_metadata TEXT,
             face_descriptor TEXT,
+            immich_person_id TEXT,
             CONSTRAINT fk_group FOREIGN KEY (group_id) REFERENCES groups (id)
         )`);
 
@@ -102,6 +103,7 @@ async function initDB(retries = 5) {
         await addColumnIfMissing('people', 'online_profiles', 'TEXT');
         await addColumnIfMissing('people', 'ai_metadata', 'TEXT');
         await addColumnIfMissing('people', 'face_descriptor', 'TEXT');
+        await addColumnIfMissing('people', 'immich_person_id', 'TEXT');
 
         await pool.query(`CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,

@@ -69,6 +69,11 @@ export const deletePhoto = async (id, index) => {
     return response.data;
 };
 
+export const syncImmichPerson = async (id) => {
+    const response = await api.post(`/people/${id}/sync-immich`);
+    return response.data;
+};
+
 export const searchByFace = async (file) => {
     const formData = new FormData();
     formData.append('photo', file);

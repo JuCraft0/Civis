@@ -10,6 +10,8 @@ services:
       - NODE_ENV=production
       - DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - FACE_AI_URL=http://face-ai:8000
+      - IMMICH_URL=${IMMICH_URL}
+      - IMMICH_API_KEY=${IMMICH_API_KEY}
     ports:
       - "5005:5005"
     restart: always
