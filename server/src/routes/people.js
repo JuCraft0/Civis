@@ -745,7 +745,7 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
         for (const asset of assetsToProcess) {
             try {
                 // Fetch the thumbnail of the asset
-                const imageRes = await fetch(`${baseUrl}/api/asset/thumbnail/${asset.id}`, { headers });
+                const imageRes = await fetch(`${baseUrl}/api/assets/${asset.id}/thumbnail`, { headers });
                 if (!imageRes.ok) continue;
                 
                 const arrayBuffer = await imageRes.arrayBuffer();
@@ -754,7 +754,7 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                 // Fetch asset details to check if we can get the face bounding box
                 let faceInfo = null;
                 try {
-                    const assetDetailsRes = await fetch(`${baseUrl}/api/asset/${asset.id}`, { headers });
+                    const assetDetailsRes = await fetch(`${baseUrl}/api/assets/${asset.id}`, { headers });
                     if (assetDetailsRes.ok) {
                         const assetDetails = await assetDetailsRes.json();
                         if (assetDetails.faces) {
