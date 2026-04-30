@@ -691,12 +691,15 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
             return res.status(500).json({ error: "Immich is not configured in environment variables" });
         }
 
+        // Normalize the base URL to prevent /api/api/ issues
+        const baseUrl = immichUrl.replace(/\/api\/?$/, '');
+
         console.log(`[Immich Sync] Starting for person ${personId} with Immich ID ${immichPersonId}`);
 
         const headers = { 'x-api-key': immichApiKey, 'Accept': 'application/json' };
         
         // 1. Get Immich Person Assets
-        const assetsRes = await fetch(`${immichUrl}/api/person/${immichPersonId}/assets`, { headers });
+        const assetsRes = await fetch(`${baseUrl}/api/person/${immichPersonId}/assets`, { headers });
         if (!assetsRes.ok) {
             return res.status(assetsRes.status).json({ error: "Failed to fetch assets from Immich" });
         }
@@ -727,7 +730,7 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
         for (const asset of assetsToProcess) {
             try {
                 // Fetch the thumbnail of the asset
-                const imageRes = await fetch(`${immichUrl}/api/asset/thumbnail/${asset.id}`, { headers });
+                const imageRes = await fetch(`${baseUrl}/api/asset/thumbnail/${asset.id}`, { headers });
                 if (!imageRes.ok) continue;
                 
                 const arrayBuffer = await imageRes.arrayBuffer();
@@ -736,7 +739,7 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                 // Fetch asset details to check if we can get the face bounding box
                 let faceInfo = null;
                 try {
-                    const assetDetailsRes = await fetch(`${immichUrl}/api/asset/${asset.id}`, { headers });
+                    const assetDetailsRes = await fetch(`${baseUrl}/api/asset/${asset.id}`, { headers });
                     if (assetDetailsRes.ok) {
                         const assetDetails = await assetDetailsRes.json();
                         if (assetDetails.faces) {
