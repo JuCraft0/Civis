@@ -687,7 +687,8 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
         const immichUrl = process.env.IMMICH_URL;
         const immichApiKey = process.env.IMMICH_API_KEY;
 
-        if (!immichUrl || !immichApiKey) {
+        if (!immichUrl || !immichApiKey || immichApiKey === 'your-api-key') {
+            console.error(`[Immich Sync] Failed: Missing or default IMMICH_URL / IMMICH_API_KEY in environment.`);
             return res.status(500).json({ error: "Immich is not configured in environment variables" });
         }
 
@@ -697,13 +698,27 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
         console.log(`[Immich Sync] Starting for person ${personId} with Immich ID ${immichPersonId}`);
 
         const headers = { 'x-api-key': immichApiKey, 'Accept': 'application/json' };
+
+        // 1. Get Immich Person Assets using search/metadata
+        const assetsRes = await fetch(`${baseUrl}/api/search/metadata`, { 
+            method: 'POST',
+            headers: { 
+                'x-api-key': immichApiKey, 
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ personIds: [immichPersonId] })
+        });
         
-        // 1. Get Immich Person Assets
-        const assetsRes = await fetch(`${baseUrl}/api/person/${immichPersonId}/assets`, { headers });
         if (!assetsRes.ok) {
+            const errText = await assetsRes.text();
+            console.error(`[Immich Sync] Failed to fetch assets. Status: ${assetsRes.status}, Body: ${errText}`);
             return res.status(assetsRes.status).json({ error: "Failed to fetch assets from Immich" });
         }
-        const assets = await assetsRes.json();
+        
+        const searchResult = await assetsRes.json();
+        const assets = searchResult.assets?.items || [];
+        
         if (!assets || assets.length === 0) {
             return res.status(404).json({ error: "No assets found for this person in Immich" });
         }
