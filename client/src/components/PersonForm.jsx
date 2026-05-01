@@ -1083,95 +1083,9 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             </button>
                         </div>
 
-                        {/* Immich Selection Modal */}
-                        <AnimatePresence>
-                            {showImmichModal && (
-                                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-                                    <motion.div
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] shadow-2xl"
-                                    >
-                                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/20">
-                                            <div className="flex items-center gap-3">
-                                                <div className="p-2 bg-cyan-500/20 rounded-xl">
-                                                    <Scan size={20} className="text-cyan-400" />
-                                                </div>
-                                                <div>
-                                                    <h3 className="text-white font-black uppercase text-sm tracking-widest">Immich Person wählen</h3>
-                                                    <p className="text-[10px] font-mono text-gray-500 uppercase">Wählen Sie die entsprechende Person aus Immich aus.</p>
-                                                </div>
-                                            </div>
-                                            <button onClick={() => setShowImmichModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-                                                <X size={20} className="text-gray-500" />
-                                            </button>
-                                        </div>
-
-                                        <div className="p-4 border-b border-white/5">
-                                            <div className="relative">
-                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                                                <input
-                                                    type="text"
-                                                    autoFocus
-                                                    value={immichSearch}
-                                                    onChange={(e) => setImmichSearch(e.target.value)}
-                                                    placeholder="NACH NAME SUCHEN..."
-                                                    className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all font-mono text-xs uppercase"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
-                                            {loadingImmich ? (
-                                                <div className="p-12 flex flex-col items-center gap-4 text-gray-500">
-                                                    <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
-                                                    <span className="font-mono text-[10px] uppercase">Lade Personen...</span>
-                                                </div>
-                                            ) : (
-                                                <div className="grid grid-cols-1 gap-1">
-                                                    {immichPeople
-                                                        .filter(p => p.name.toLowerCase().includes(immichSearch.toLowerCase()))
-                                                        .map(person => (
-                                                            <button
-                                                                key={person.id}
-                                                                type="button"
-                                                                onClick={() => {
-                                                                    setFormData(prev => ({ ...prev, immich_person_id: person.id }));
-                                                                    setShowImmichModal(false);
-                                                                }}
-                                                                className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-2xl transition-all group text-left"
-                                                            >
-                                                                <div className="w-12 h-12 rounded-xl bg-black/40 border border-white/10 overflow-hidden flex-shrink-0 relative">
-                                                                    {person.thumbnail ? (
-                                                                        <AuthenticatedImage 
-                                                                            src={person.thumbnail} 
-                                                                            alt="" 
-                                                                            className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
-                                                                        />
-                                                                    ) : (
-                                                                        <div className="w-full h-full flex items-center justify-center text-gray-700">
-                                                                            <Users size={20} />
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                <div className="flex-1">
-                                                                    <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors uppercase">{person.name || 'Unbenannt'}</div>
-                                                                    <div className="text-[9px] font-mono text-gray-600 group-hover:text-cyan-500/70 transition-colors">{person.id}</div>
-                                                                </div>
-                                                                <div className="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
-                                                                    <Plus size={16} className="text-cyan-500" />
-                                                                </div>
-                                                            </button>
-                                                        ))
-                                                    }
-                                                </div>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                </div>
-                            )}
-                        </AnimatePresence>
+                        </div>
+                    </motion.div>
+                )}
                     </motion.div>
                 )}
 
@@ -1213,6 +1127,96 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                     Abbrechen
                 </motion.button>
             </div>
+
+            {/* Immich Selection Modal - Moved outside to avoid layout clipping */}
+            <AnimatePresence>
+                {showImmichModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-[#121214] border border-white/10 rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh] shadow-2xl"
+                        >
+                            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-black/20">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-cyan-500/20 rounded-xl">
+                                        <Scan size={20} className="text-cyan-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-white font-black uppercase text-sm tracking-widest">Immich Person wählen</h3>
+                                        <p className="text-[10px] font-mono text-gray-500 uppercase">Wählen Sie die entsprechende Person aus Immich aus.</p>
+                                    </div>
+                                </div>
+                                <button onClick={() => setShowImmichModal(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                                    <X size={20} className="text-gray-500" />
+                                </button>
+                            </div>
+
+                            <div className="p-4 border-b border-white/5">
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        value={immichSearch}
+                                        onChange={(e) => setImmichSearch(e.target.value)}
+                                        placeholder="NACH NAME SUCHEN..."
+                                        className="w-full bg-black/40 border border-white/10 rounded-2xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all font-mono text-xs uppercase"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-2 custom-scrollbar">
+                                {loadingImmich ? (
+                                    <div className="p-12 flex flex-col items-center gap-4 text-gray-500">
+                                        <div className="w-8 h-8 border-2 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin"></div>
+                                        <span className="font-mono text-[10px] uppercase">Lade Personen...</span>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-1">
+                                        {immichPeople
+                                            .filter(p => p.name.toLowerCase().includes(immichSearch.toLowerCase()))
+                                            .map(person => (
+                                                <button
+                                                    key={person.id}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData(prev => ({ ...prev, immich_person_id: person.id }));
+                                                        setShowImmichModal(false);
+                                                    }}
+                                                    className="flex items-center gap-4 p-3 hover:bg-white/5 rounded-2xl transition-all group text-left"
+                                                >
+                                                    <div className="w-12 h-12 rounded-xl bg-black/40 border border-white/10 overflow-hidden flex-shrink-0 relative">
+                                                        {person.thumbnail ? (
+                                                            <AuthenticatedImage 
+                                                                src={person.thumbnail} 
+                                                                alt="" 
+                                                                className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
+                                                            />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-gray-700">
+                                                                <Users size={20} />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors uppercase">{person.name || 'Unbenannt'}</div>
+                                                        <div className="text-[9px] font-mono text-gray-600 group-hover:text-cyan-500/70 transition-colors">{person.id}</div>
+                                                    </div>
+                                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity pr-2">
+                                                        <Plus size={16} className="text-cyan-500" />
+                                                    </div>
+                                                </button>
+                                            ))
+                                        }
+                                    </div>
+                                )}
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </form>
     );
 };

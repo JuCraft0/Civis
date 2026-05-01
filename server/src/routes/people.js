@@ -755,8 +755,8 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
 
         for (const asset of assetsToProcess) {
             try {
-                // Fetch the thumbnail of the asset
-                const imageRes = await fetch(`${baseUrl}/api/assets/${asset.id}/thumbnail`, { headers });
+                // Fetch the thumbnail of the asset - use 'preview' for better quality/accuracy
+                const imageRes = await fetch(`${baseUrl}/api/assets/${asset.id}/thumbnail?size=preview`, { headers });
                 if (!imageRes.ok) continue;
                 
                 const arrayBuffer = await imageRes.arrayBuffer();
@@ -951,7 +951,7 @@ router.get('/immich/people/:personId/thumbnail', authenticateToken, async (req, 
         }
 
         const headers = { 'x-api-key': apiKey };
-        const response = await fetch(`${baseUrl}/api/people/${req.params.personId}/thumbnail`, { headers });
+        const response = await fetch(`${baseUrl}/api/people/${req.params.personId}/thumbnail?size=preview`, { headers });
         
         if (!response.ok) {
             return res.status(response.status).send('Failed to fetch thumbnail');
