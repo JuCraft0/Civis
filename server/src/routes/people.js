@@ -804,9 +804,9 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                     const width = Math.round((faceInfo.boundingBoxX2 - faceInfo.boundingBoxX1) * widthRatio);
                     const height = Math.round((faceInfo.boundingBoxY2 - faceInfo.boundingBoxY1) * heightRatio);
                     
-                    // Add 20% padding
-                    const padX = Math.round(width * 0.2);
-                    const padY = Math.round(height * 0.2);
+                    // Add 50% padding (more context helps AI detection)
+                    const padX = Math.round(width * 0.5);
+                    const padY = Math.round(height * 0.5);
                     
                     const cropLeft = Math.max(0, left - padX);
                     const cropTop = Math.max(0, top - padY);

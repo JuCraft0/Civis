@@ -54,6 +54,8 @@ async def analyze(photo: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="Invalid image format")
 
         faces = face_app.get(img)
+        if not faces:
+            faces = face_app.get(img, det_thresh=0.3)
         
         if not faces:
             # Return empty structure if no face detected
@@ -102,6 +104,8 @@ async def represent(photo: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="Invalid image format")
 
         faces = face_app.get(img)
+        if not faces:
+            faces = face_app.get(img, det_thresh=0.3)
         
         if not faces:
             raise HTTPException(status_code=422, detail="No face detected in image")
@@ -145,7 +149,12 @@ async def verify(
         img2 = bytes_to_cv2(bytes2)
 
         faces1 = face_app.get(img1)
+        if not faces1:
+            faces1 = face_app.get(img1, det_thresh=0.3)
+            
         faces2 = face_app.get(img2)
+        if not faces2:
+            faces2 = face_app.get(img2, det_thresh=0.3)
 
         if not faces1 or not faces2:
             raise HTTPException(status_code=422, detail="Face not detected in one or both images")
@@ -198,6 +207,8 @@ async def process(photo: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="Invalid image format")
 
         faces = face_app.get(img)
+        if not faces:
+            faces = face_app.get(img, det_thresh=0.3)
         
         if not faces:
             return {
