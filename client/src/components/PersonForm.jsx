@@ -1083,9 +1083,6 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             </button>
                         </div>
 
-                        </div>
-                    </motion.div>
-                )}
                     </motion.div>
                 )}
 
