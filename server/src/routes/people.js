@@ -764,8 +764,15 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                             const personData = assetDetails.people.find(p => p.id === immichPersonId);
                             if (personData && personData.faces && personData.faces.length > 0) {
                                 faceInfo = personData.faces[0];
+                                console.log(`[Immich Sync] Found face info for asset ${asset.id}`);
+                            } else {
+                                console.log(`[Immich Sync] No face info found for person ${immichPersonId} in asset ${asset.id}`);
                             }
+                        } else {
+                            console.log(`[Immich Sync] Asset ${asset.id} has no people array`);
                         }
+                    } else {
+                        console.log(`[Immich Sync] Failed to fetch details for asset ${asset.id}: ${assetDetailsRes.status}`);
                     }
                 } catch (e) {
                     // Ignore, we will fallback to processing the whole image
@@ -821,12 +828,14 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                     );
 
                     processedCount++;
+                    console.log(`[Immich Sync] Successfully processed and saved face for asset ${asset.id}`);
                     
                     if (allDescriptors.length >= 100) {
                         // Max 100 descriptors
                         break;
                     }
                 } else {
+                    console.log(`[Immich Sync] AI Service could not find face in asset ${asset.id}`);
                     skippedCount++;
                 }
 
