@@ -7,6 +7,7 @@ const { get, all, run, db, pool } = require('../database');
 const { authenticateToken, requireEditor, requireAdmin } = require('../middlewares/auth');
 const { buildGroupPathAsync, syncRelationships, updateAllNeighbors, updatePersonTextField } = require('../utils/helpers');
 const { processImage, calculateSimilarity, verifyFaces, getEmbedding } = require('../services/faceRecognition');
+const fetch = require('node-fetch');
 
 const router = express.Router();
 
@@ -865,7 +866,6 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
         );
 
         // Auto-set profile picture if none exists
-        const current = await get("SELECT photo_url FROM people WHERE id = ?", [personId]);
         if (!current?.photo_url && firstFaceBuffer) {
              const result = await run(
                 'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
