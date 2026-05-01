@@ -79,6 +79,11 @@ export const getImmichFaces = async (id) => {
     return response.data;
 };
 
+export const getImmichPeople = async () => {
+    const response = await api.get('/people/immich/people');
+    return response.data;
+};
+
 export const searchByFace = async (file) => {
     const formData = new FormData();
     formData.append('photo', file);

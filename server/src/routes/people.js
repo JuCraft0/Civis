@@ -747,6 +747,7 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
 
         let processedCount = 0;
         let skippedCount = 0;
+        let firstFaceBuffer = null;
 
         // Clear existing faces for this person
         await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
@@ -836,6 +837,8 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                     processedCount++;
                     console.log(`[Immich Sync] Successfully processed and saved face for asset ${asset.id}`);
                     
+                    if (!firstFaceBuffer) firstFaceBuffer = finalBuffer;
+
                     if (allDescriptors.length >= 100) {
                         // Max 100 descriptors
                         break;
@@ -861,6 +864,18 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
             [JSON.stringify(allDescriptors), personId]
         );
 
+        // Auto-set profile picture if none exists
+        const current = await get("SELECT photo_url FROM people WHERE id = ?", [personId]);
+        if (!current?.photo_url && firstFaceBuffer) {
+             const result = await run(
+                'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
+                [personId, firstFaceBuffer, 'image/webp']
+            );
+            const photoId = result.lastID;
+            await run('UPDATE people SET photo_url = ? WHERE id = ?', [`/api/people/photo/${photoId}`, personId]);
+            console.log(`[Immich Sync] Automatically set profile picture for person ${personId}`);
+        }
+
         console.log(`[Immich Sync] Finished. Processed: ${processedCount}, Skipped: ${skippedCount}, Total Descriptors: ${allDescriptors.length}`);
         res.json({ 
             message: "Immich sync completed", 
@@ -871,6 +886,81 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
 
     } catch (err) {
         console.error("Immich Sync error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET Immich People List
+ * Fetches the list of identified people from the Immich server
+ */
+router.get('/immich/people', authenticateToken, async (req, res) => {
+    try {
+        const baseUrl = (process.env.IMMICH_URL || '').replace(/\/api\/?$/, '');
+        const apiKey = process.env.IMMICH_API_KEY;
+
+        if (!baseUrl || !apiKey) {
+            return res.status(400).json({ error: "Immich configuration missing" });
+        }
+
+        const headers = { 'x-api-key': apiKey, 'Accept': 'application/json' };
+        const response = await fetch(`${baseUrl}/api/people`, { headers });
+        
+        if (!response.ok) {
+            throw new Error(`Immich API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        // Immich returns an array directly in recent versions, or an object with 'people' key.
+        const people = Array.isArray(data) ? data : (data.people || []);
+
+        res.json({ 
+            people: people.map(p => {
+                let thumbUrl = null;
+                if (p.thumbnailPath) {
+                    // Extract asset ID from thumbnail path if possible, or use the person's thumbnail logic
+                    // In Immich, the thumbnail for a person is often accessible via /api/assets/{id}/thumbnail
+                    // But person.thumbnailPath is a server path. 
+                    // Actually, let's just use the person ID for the thumbnail if we can't get it easily.
+                    // For now, we'll just send the name and ID, and let the frontend handle it if it can.
+                    thumbUrl = `/api/people/immich/people/${p.id}/thumbnail`;
+                }
+                return { 
+                    id: p.id, 
+                    name: p.name, 
+                    thumbnail: thumbUrl 
+                };
+            }) 
+        });
+    } catch (err) {
+        console.error("GET /immich/people error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET Immich Person Thumbnail Proxy
+ */
+router.get('/immich/people/:personId/thumbnail', authenticateToken, async (req, res) => {
+    try {
+        const baseUrl = (process.env.IMMICH_URL || '').replace(/\/api\/?$/, '');
+        const apiKey = process.env.IMMICH_API_KEY;
+
+        if (!baseUrl || !apiKey) {
+            return res.status(400).json({ error: "Immich configuration missing" });
+        }
+
+        const headers = { 'x-api-key': apiKey };
+        const response = await fetch(`${baseUrl}/api/people/${req.params.personId}/thumbnail`, { headers });
+        
+        if (!response.ok) {
+            return res.status(response.status).send('Failed to fetch thumbnail');
+        }
+
+        const buffer = await response.buffer();
+        res.setHeader('Content-Type', response.headers.get('content-type') || 'image/jpeg');
+        res.send(buffer);
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
