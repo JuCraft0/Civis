@@ -835,6 +835,15 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                         [personId, asset.id, finalBuffer]
                     );
 
+                    // Also save to main gallery (person_photos) if we have less than 10 photos from Immich
+                    const galleryCount = await get('SELECT COUNT(*) as count FROM person_photos WHERE person_id = ?', [personId]);
+                    if (galleryCount.count < 10) {
+                        await run(
+                            'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
+                            [personId, finalBuffer, 'image/webp']
+                        );
+                    }
+
                     processedCount++;
                     console.log(`[Immich Sync] Successfully processed and saved face for asset ${asset.id}`);
                     
