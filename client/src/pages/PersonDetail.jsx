@@ -5,7 +5,7 @@ import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, P
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -47,6 +47,47 @@ const AuthenticatedImage = ({ src, alt, className }) => {
     return <img src={imageSrc} alt={alt} className={className} />;
 };
 
+const ImmichFacesModule = ({ personId, faces }) => {
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    
+    if (!faces || faces.length === 0) return null;
+
+    return (
+        <div className="space-y-4">
+            <button 
+                onClick={() => setIsCollapsed(!isCollapsed)} 
+                className="w-full text-left flex justify-between items-center text-xs font-mono uppercase text-gray-500 hover:text-white transition-colors"
+            >
+                <span>{faces.length} {faces.length === 1 ? 'Gesicht' : 'Gesichter'} erkannt</span>
+                <span>{isCollapsed ? '[ Anzeigen ]' : '[ Verbergen ]'}</span>
+            </button>
+            
+            <AnimatePresence>
+                {!isCollapsed && (
+                    <motion.div 
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
+                            {faces.slice(0, 20).map((assetId, idx) => (
+                                <div key={assetId} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
+                                    <AuthenticatedImage
+                                        src={`/api/people/${personId}/immich-face/${assetId}`}
+                                        alt={`Face ${idx + 1}`}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 const PersonDetail = () => {
     const { user } = useAuth();
     const { id } = useParams();
@@ -69,12 +110,24 @@ const PersonDetail = () => {
     const [toast, setToast] = useState({ message: '', type: 'success' });
     const [focusedModule, setFocusedModule] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [immichFaces, setImmichFaces] = useState([]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const data = await getPerson(id);
             setPerson(data.data);
+            
+            if (data.data.immich_person_id) {
+                try {
+                    const facesData = await getImmichFaces(id);
+                    setImmichFaces(facesData.faces || []);
+                } catch (e) {
+                    console.error("Failed to fetch immich faces", e);
+                }
+            } else {
+                setImmichFaces([]);
+            }
         } catch (error) {
             console.error("Failed to fetch person data", error);
         } finally {
@@ -481,6 +534,15 @@ const PersonDetail = () => {
                     </div>
                 );
             }
+        },
+        {
+            id: 'immich_faces',
+            label: 'Immich Gesichter',
+            icon: ImageIcon,
+            color: 'cyan',
+            fullWidth: true,
+            isActive: (p) => immichFaces && immichFaces.length > 0,
+            render: (p) => <ImmichFacesModule personId={p.id} faces={immichFaces} />
         }
     ];
 
@@ -543,6 +605,7 @@ const PersonDetail = () => {
                                         const getColorStyles = (color) => {
                                             switch (color) {
                                                 case 'blue': return 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/30';
+                                                case 'cyan': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 hover:border-cyan-500/30';
                                                 case 'orange': return 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:border-orange-500/30';
                                                 case 'green': return 'bg-green-500/10 text-green-400 border-green-500/20 hover:border-green-500/30';
                                                 case 'red': return 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/30';

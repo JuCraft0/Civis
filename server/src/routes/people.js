@@ -742,6 +742,9 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
         let processedCount = 0;
         let skippedCount = 0;
 
+        // Clear existing faces for this person
+        await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
+
         for (const asset of assetsToProcess) {
             try {
                 // Fetch the thumbnail of the asset
@@ -806,9 +809,14 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
 
                 const faceData = await processImage(finalBuffer);
                 if (faceData && faceData.descriptor) {
-                    // Safety check: if we didn't crop and ai-service says confidence is low or something, 
-                    // we might want to skip, but processImage will return the largest face.
                     allDescriptors.push(faceData.descriptor);
+                    
+                    // Save the cropped face for UI display
+                    await run(
+                        'INSERT INTO immich_faces (person_id, asset_id, photo_data) VALUES (?, ?, ?)',
+                        [personId, asset.id, finalBuffer]
+                    );
+
                     processedCount++;
                     
                     if (allDescriptors.length >= 100) {
@@ -845,6 +853,43 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
 
     } catch (err) {
         console.error("Immich Sync error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET Immich Faces
+ * Returns a list of asset IDs for the cropped faces of this person
+ */
+router.get('/:id/immich-faces', authenticateToken, async (req, res) => {
+    try {
+        const personId = req.params.id;
+        const faces = await all("SELECT asset_id FROM immich_faces WHERE person_id = ?", [personId]);
+        res.json({ faces: faces.map(f => f.asset_id) });
+    } catch (err) {
+        console.error("GET immich-faces error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * GET Immich Face Image
+ * Returns the cropped photo data for a specific asset
+ */
+router.get('/:id/immich-face/:assetId', authenticateToken, async (req, res) => {
+    try {
+        const personId = req.params.id;
+        const assetId = req.params.assetId;
+        const face = await get("SELECT photo_data FROM immich_faces WHERE person_id = ? AND asset_id = ?", [personId, assetId]);
+        
+        if (!face || !face.photo_data) {
+            return res.status(404).json({ error: "Face not found" });
+        }
+
+        res.set('Content-Type', 'image/webp'); // sharp defaults to webp or jpeg depending on source, but sharp(buffer).toBuffer() outputs what sharp defaults to (often webp or jpeg, browsers handle both)
+        res.send(face.photo_data);
+    } catch (err) {
+        console.error("GET immich-face error:", err);
         res.status(500).json({ error: err.message });
     }
 });

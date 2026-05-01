@@ -74,6 +74,11 @@ export const syncImmichPerson = async (id) => {
     return response.data;
 };
 
+export const getImmichFaces = async (id) => {
+    const response = await api.get(`/people/${id}/immich-faces`);
+    return response.data;
+};
+
 export const searchByFace = async (file) => {
     const formData = new FormData();
     formData.append('photo', file);
