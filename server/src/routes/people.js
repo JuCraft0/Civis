@@ -467,14 +467,20 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
         const matches = [];
         for (const candidate of topCandidates) {
             try {
-                // Load up to 3 photos for this person to increase detection robustness
-                // Using multiple photos helps if one angle or lighting condition is poor
-                const { rows: photos } = await pool.query(
+                // Load up to 3 local photos and 5 Immich faces to increase detection robustness
+                const { rows: localPhotos } = await pool.query(
                     'SELECT photo_data FROM person_photos WHERE person_id = $1 ORDER BY id ASC LIMIT 3',
                     [candidate.id]
                 );
 
-                if (!photos || photos.length === 0) {
+                const { rows: immichPhotos } = await pool.query(
+                    'SELECT photo_data FROM immich_faces WHERE person_id = $1 ORDER BY id ASC LIMIT 5',
+                    [candidate.id]
+                );
+
+                const photos = [...localPhotos, ...immichPhotos];
+
+                if (photos.length === 0) {
                     continue;
                 }
 
