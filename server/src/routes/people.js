@@ -760,8 +760,11 @@ router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, re
                     const assetDetailsRes = await fetch(`${baseUrl}/api/assets/${asset.id}`, { headers });
                     if (assetDetailsRes.ok) {
                         const assetDetails = await assetDetailsRes.json();
-                        if (assetDetails.faces) {
-                            faceInfo = assetDetails.faces.find(f => f.personId === immichPersonId);
+                        if (assetDetails.people) {
+                            const personData = assetDetails.people.find(p => p.id === immichPersonId);
+                            if (personData && personData.faces && personData.faces.length > 0) {
+                                faceInfo = personData.faces[0];
+                            }
                         }
                     }
                 } catch (e) {
