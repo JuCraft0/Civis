@@ -737,6 +737,7 @@ async function syncImmichForPerson(personId) {
     let skippedCount = 0;
     let bestFaceData = null;
     let bestFaceBuffer = null;
+    let bestFaceScore = -1;
 
     // Clear existing faces for this person
     await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
@@ -803,7 +804,8 @@ async function syncImmichForPerson(personId) {
                 // Avoid adding extremely similar faces (burst shots)
                 let isRedundant = false;
                 for (const existing of allDescriptors) {
-                    if (calculateSimilarity(faceData.descriptor, existing) < 0.1) {
+                    // Increased threshold to 0.2 to be more aggressive against burst shots
+                    if (calculateSimilarity(faceData.descriptor, existing) < 0.2) {
                         isRedundant = true;
                         break;
                     }
@@ -814,10 +816,15 @@ async function syncImmichForPerson(personId) {
                     continue;
                 }
 
-                // Track the face with the highest confidence to use as primary profile picture
-                if (!bestFaceData || faceData.confidence > bestFaceData.confidence) {
+                // Track the face with the highest score (confidence * area) to use as primary profile picture
+                // Larger faces with high detection confidence are usually better quality
+                const faceArea = faceData.bbox ? (faceData.bbox[2] - faceData.bbox[0]) * (faceData.bbox[3] - faceData.bbox[1]) : 0;
+                const faceScore = faceData.confidence * faceArea;
+                
+                if (!bestFaceData || faceScore > bestFaceScore) {
                     bestFaceData = faceData;
                     bestFaceBuffer = finalBuffer;
+                    bestFaceScore = faceScore;
                 }
 
                 allDescriptors.push(faceData.descriptor);
