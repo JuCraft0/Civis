@@ -884,6 +884,9 @@ async function syncImmichForPerson(personId) {
         const shouldUpdateProfile = !person.photo_url || bestFaceData.confidence > 0.9;
         
         if (shouldUpdateProfile) {
+            // Reset old system-selected profile photos to prevent clutter
+            await run('DELETE FROM person_photos WHERE person_id = ? AND quality IS NOT NULL', [personId]);
+
             const result = await run(
                 'INSERT INTO person_photos (person_id, photo_data, mime_type, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
                 [personId, bestFaceBuffer, 'image/webp', bestFaceScore, JSON.stringify(bestFaceData.qualityDetails)]
@@ -1004,7 +1007,10 @@ router.post('/reevaluate-all-profiles', authenticateToken, requireAdmin, async (
                         }
                     }
 
-                    if (bestFace && maxQuality > 0.5) {
+                    if (bestFace && maxQuality > 0.6) {
+                        // DELETE old system-selected photos first (Reset current system choice)
+                        await run('DELETE FROM person_photos WHERE person_id = ? AND quality IS NOT NULL', [person.id]);
+
                         const aiData = await processImage(bestFace.photo_data);
                         if (aiData) {
                             const insertResult = await run(
@@ -1038,6 +1044,21 @@ router.post('/reevaluate-all-profiles', authenticateToken, requireAdmin, async (
         })();
     } catch (err) {
         console.error("Re-evaluation error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * POST /api/people/:id/reset-profile-photo
+ * Clears the current profile photo and AI metadata for a person
+ */
+router.post('/:id/reset-profile-photo', authenticateToken, requireEditor, async (req, res) => {
+    try {
+        await run('DELETE FROM person_photos WHERE person_id = ? AND quality IS NOT NULL', [req.params.id]);
+        await run('UPDATE people SET photo_url = NULL, ai_metadata = NULL WHERE id = ?', [req.params.id]);
+        res.json({ message: "Profilbild erfolgreich zurückgesetzt." });
+    } catch (err) {
+        console.error("Reset profile photo error:", err);
         res.status(500).json({ error: err.message });
     }
 });

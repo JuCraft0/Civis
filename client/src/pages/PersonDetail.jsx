@@ -5,7 +5,7 @@ import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, P
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces, setPrimaryPhoto } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces, setPrimaryPhoto, resetProfilePhoto } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -191,6 +191,17 @@ const PersonDetail = () => {
         }
     };
 
+    const handleResetProfilePhoto = async () => {
+        if (!window.confirm("Möchtest du das Profilbild wirklich zurücksetzen?")) return;
+        try {
+            await resetProfilePhoto(id);
+            setToast({ message: 'Profilbild zurückgesetzt', type: 'success' });
+            fetchData();
+        } catch (error) {
+            setToast({ message: 'Fehler beim Zurücksetzen', type: 'error' });
+        }
+    };
+
     const handleSetPrimaryPhoto = async (assetId) => {
         try {
             setToast({ message: 'Aktualisiere Profilbild...', type: 'info' });
@@ -217,7 +228,6 @@ const PersonDetail = () => {
         </div>
     );
 
-    // Module Definition
     const modules = [
         {
             id: 'photo',
@@ -232,7 +242,6 @@ const PersonDetail = () => {
 
                 return (
                     <div className="space-y-6">
-                        {/* Primary Photo */}
                         <div className="flex justify-center">
                             <div className="w-64 h-64 rounded-3xl overflow-hidden border-2 border-white/10 shadow-2xl relative group/photo">
                                 {activeUrls[0] ? (
@@ -252,7 +261,6 @@ const PersonDetail = () => {
                             </div>
                         </div>
 
-                        {/* Gallery Tiles */}
                         {activeUrls.length > 1 && (
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/5">
                                 {activeUrls.slice(1).map((url, idx) => (
@@ -601,14 +609,36 @@ const PersonDetail = () => {
                                     <div className="text-[10px] font-mono text-blue-500/50 uppercase tracking-[0.3em] mb-1">Stammdatei</div>
                                     <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase">{person.name}</h1>
                                 </div>
-                                <div className="flex gap-3">
-                                    {person.immich_person_id && (user?.role === 'admin' || user?.role === 'editor') && (
-                                        <button onClick={handleSyncImmich} disabled={isSyncing} className="p-4 bg-cyan-500/10 hover:bg-cyan-500/20 rounded-full text-cyan-400 border border-cyan-500/20 transition-all shadow-lg flex items-center justify-center relative" title="Mit Immich synchronisieren">
-                                            {isSyncing ? <Loader size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+                                <div className="flex gap-2">
+                                    {(user?.role === 'admin' || user?.role === 'editor') && person?.immich_person_id && (
+                                        <button
+                                            onClick={handleSyncImmich}
+                                            disabled={isSyncing}
+                                            className="bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-3 py-2 rounded-xl border border-blue-500/20 transition-all flex items-center gap-2 font-mono text-[10px] font-bold uppercase"
+                                            title="Sync with Immich"
+                                        >
+                                            <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
+                                            Sync
+                                        </button>
+                                    )}
+                                    {(user?.role === 'admin' || user?.role === 'editor') && person?.photo_url && (
+                                        <button
+                                            onClick={handleResetProfilePhoto}
+                                            className="bg-red-600/10 text-red-500 hover:bg-red-600/20 px-3 py-2 rounded-xl border border-red-500/20 transition-all flex items-center gap-2 font-mono text-[10px] font-bold uppercase"
+                                            title="Profilbild zurücksetzen"
+                                        >
+                                            <Trash2 size={14} />
+                                            Reset
                                         </button>
                                     )}
                                     {(user?.role === 'admin' || user?.role === 'editor') && (
-                                        <button onClick={() => setIsEditing(true)} className="p-4 bg-white/5 hover:bg-white/10 rounded-full text-blue-400 border border-white/10 transition-all shadow-lg"><Edit3 size={20} /></button>
+                                        <button
+                                            onClick={() => setIsEditing(true)}
+                                            className="bg-white/5 text-white hover:bg-white/10 px-3 py-2 rounded-xl border border-white/10 transition-all flex items-center gap-2 font-mono text-[10px] font-bold uppercase"
+                                        >
+                                            <Edit3 size={14} />
+                                            Edit
+                                        </button>
                                     )}
                                     {user?.role === 'admin' && (
                                         <button onClick={() => setShowDeleteModal(true)} className="p-4 bg-red-500/10 hover:bg-red-500/20 rounded-full text-red-500 border border-red-500/20 transition-all shadow-lg"><Trash2 size={20} /></button>
@@ -616,7 +646,6 @@ const PersonDetail = () => {
                                 </div>
                             </div>
 
-                            {/* ACTIVE MODULES GRID */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <AnimatePresence mode="popLayout">
                                     {activeModules.map((module) => {

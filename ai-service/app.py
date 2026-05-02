@@ -226,10 +226,11 @@ def calculate_quality(face, img):
         pose_score = (horiz_sym * 0.7) + (vert_sym * 0.3)
         
     # Normalize blur score (typical "good" values are > 100, "excellent" > 300)
-    norm_blur = min(1.0, blur_score / 300.0)
+    norm_blur = min(1.0, blur_score / 500.0)
     
     # Composite Quality Score (0.0 to 1.0)
-    quality = (float(face.det_score) * 0.4) + (norm_blur * 0.4) + (pose_score * 0.2)
+    # 40% Detection, 30% Blur/Sharpness, 30% Pose/Frontality
+    quality = (float(face.det_score) * 0.4) + (norm_blur * 0.3) + (pose_score * 0.3)
     
     return {
         "score": float(quality),

@@ -139,6 +139,11 @@ export const setPrimaryPhoto = async (personId, data) => {
     return response.data;
 };
 
+export const resetProfilePhoto = async (id) => {
+    const response = await api.post(`/people/${id}/reset-profile-photo`);
+    return response.data;
+};
+
 // Admin Functions
 export const createUser = async (userData) => {
     const response = await api.post('/users', userData);
