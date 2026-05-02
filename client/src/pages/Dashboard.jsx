@@ -541,6 +541,12 @@ const Dashboard = () => {
                         >
                             <Share2 size={16} /> NETZWERK
                         </button>
+                        <button
+                            onClick={() => setActiveTab('facescan')}
+                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'facescan' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                        >
+                            <Scan size={16} /> FACE SCAN
+                        </button>
                         {user?.role === 'admin' && (
                             <button
                                 onClick={() => setActiveTab('users')}
@@ -557,12 +563,6 @@ const Dashboard = () => {
                                 <Database size={16} /> DEBUG
                             </button>
                         )}
-                        <button
-                            onClick={() => setActiveTab('facescan')}
-                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'facescan' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                        >
-                            <Scan size={16} /> FACE SCAN
-                        </button>
                     </div>
                 </div>
 

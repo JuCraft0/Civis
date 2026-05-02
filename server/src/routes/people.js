@@ -18,6 +18,8 @@ const upload = multer({
     limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB limit
 });
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 router.get('/maintenance-progress', authenticateToken, (req, res) => {
     res.json(currentProgress);
 });
@@ -746,8 +748,7 @@ async function syncImmichForPerson(personId) {
     let bestFaceBuffer = null;
     let bestFaceScore = -1;
 
-    // Clear existing faces for this person
-    await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
+    let hasProcessedSuccessfully = false;
 
     for (const asset of assetsToProcess) {
         try {
@@ -808,12 +809,20 @@ async function syncImmichForPerson(personId) {
                 }
             }
 
+            // Small delay to prevent overwhelming the AI service during bulk operations
+            await sleep(100);
+
             const faceData = await processImage(finalBuffer);
             if (faceData && faceData.descriptor) {
+                // Clear existing faces for this person only on the first successful process to avoid empty state if AI service crashes later
+                if (!hasProcessedSuccessfully) {
+                    await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
+                    hasProcessedSuccessfully = true;
+                }
+
                 // Avoid adding extremely similar faces (burst shots)
                 let isRedundant = false;
                 for (const existing of allDescriptors) {
-                    // Increased threshold to 0.2 to be more aggressive against burst shots
                     if (calculateSimilarity(faceData.descriptor, existing) < 0.2) {
                         isRedundant = true;
                         break;
@@ -825,7 +834,6 @@ async function syncImmichForPerson(personId) {
                     continue;
                 }
 
-                // Use the composite quality score from the AI service (combines confidence, blur, and pose)
                 let qualityScore = faceData.quality || 0;
                 
                 if (!bestFaceData || qualityScore > bestFaceScore) {
@@ -853,10 +861,7 @@ async function syncImmichForPerson(personId) {
 
                 processedCount++;
                 
-                // If we have found enough faces for the gallery (50), we stop adding to DB 
-                // but we continue scanning the rest of the 500 assets ONLY to find a potentially better "best face"
-                // To save time, we only do AI processing for the "best face" check if the asset looks promising 
-                // (e.g. it has a large face according to Immich metadata)
+                // Optimization: stop scanning if we have enough and found a great face
                 if (processedCount >= 50 && bestFaceScore > 0.95) break;
             } else {
                 skippedCount++;
@@ -868,7 +873,7 @@ async function syncImmichForPerson(personId) {
         }
     }
 
-    // Keep at most 100 descriptors to save space
+    // Keep at most 100 descriptors
     if (allDescriptors.length > 100) {
         allDescriptors = allDescriptors.slice(allDescriptors.length - 100);
     }
@@ -884,7 +889,7 @@ async function syncImmichForPerson(personId) {
         const shouldUpdateProfile = !person.photo_url || bestFaceData.confidence > 0.9;
         
         if (shouldUpdateProfile) {
-            // Reset old system-selected profile photos to prevent clutter
+            // Reset old system-selected profile photos
             await run('DELETE FROM person_photos WHERE person_id = ? AND quality IS NOT NULL', [personId]);
 
             const result = await run(
@@ -897,6 +902,7 @@ async function syncImmichForPerson(personId) {
                 estimated_age: bestFaceData.estimatedAge,
                 estimated_gender: bestFaceData.estimatedGender,
                 confidence: bestFaceData.confidence,
+                quality: bestFaceData.quality,
                 bbox: bestFaceData.bbox || null,
                 width: bestFaceData.width || 800,
                 height: bestFaceData.height || 800
@@ -935,22 +941,22 @@ router.post('/sync-all-immich', authenticateToken, requireAdmin, async (req, res
         const people = await all('SELECT id FROM people WHERE immich_person_id IS NOT NULL');
         console.log(`[Immich Sync All] Starting sync for ${people.length} people`);
         
-        // Return 202 Accepted if it's a long task
         res.status(202).json({ message: "Bulk sync started", total: people.length });
 
-        // Run in background
         (async () => {
             currentProgress = { active: true, current: 0, total: people.length, status: 'Synchronisiere mit Immich...', startTime: new Date() };
             
             let successful = 0;
             let failed = 0;
 
-            for (const person of people) {
+            for (const p of people) {
+                if (!currentProgress.active) break;
                 try {
-                    await syncImmichForPerson(person.id);
+                    await sleep(500); // Throttling to prevent ECONNREFUSED
+                    await syncImmichForPerson(p.id);
                     successful++;
                 } catch (err) {
-                    console.error(`[Immich Sync All] Failed to sync person ${person.id}:`, err.message);
+                    console.error(`[Bulk Sync] Error for person ${p.id}:`, err);
                     failed++;
                 }
                 currentProgress.current++;
@@ -994,6 +1000,7 @@ router.post('/reevaluate-all-profiles', authenticateToken, requireAdmin, async (
                     for (const face of faces) {
                         let quality = face.quality;
                         if (quality === null) {
+                            await sleep(100);
                             const aiData = await processImage(face.photo_data);
                             if (aiData) {
                                 quality = aiData.quality || 0;
@@ -1007,17 +1014,16 @@ router.post('/reevaluate-all-profiles', authenticateToken, requireAdmin, async (
                         }
                     }
 
-                    if (bestFace && maxQuality > 0.6) {
-                        // DELETE old system-selected photos first (Reset current system choice)
-                        await run('DELETE FROM person_photos WHERE person_id = ? AND quality IS NOT NULL', [person.id]);
-
+                    if (bestFace && maxQuality > 0.4) {
+                        currentProgress.current++;
+                        
+                        // Try to get AI data first before deleting anything
                         const aiData = await processImage(bestFace.photo_data);
                         if (aiData) {
-                            const insertResult = await run(
-                                'INSERT INTO person_photos (person_id, photo_data, mime_type, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
-                                [person.id, bestFace.photo_data, 'image/webp', aiData.quality, JSON.stringify(aiData.qualityDetails)]
-                            );
-                            const photoId = insertResult.lastID;
+                            // Atomic-ish update: delete old and insert new
+                            await run('DELETE FROM person_photos WHERE person_id = ? AND quality IS NOT NULL', [person.id]);
+                            
+                            const qDetails = JSON.stringify(aiData.qualityDetails || {});
                             const ai_metadata = JSON.stringify({
                                 estimated_age: aiData.estimatedAge,
                                 estimated_gender: aiData.estimatedGender,
@@ -1028,10 +1034,24 @@ router.post('/reevaluate-all-profiles', authenticateToken, requireAdmin, async (
                                 width: aiData.width || 800,
                                 height: aiData.height || 800
                             });
+
+                            // Use NULL for id to let SERIAL handle it
+                            const insertResult = await run(
+                                'INSERT INTO person_photos (person_id, photo_data, quality, quality_details, mime_type) VALUES (?, ?, ?, ?, ?)', 
+                                [person.id, bestFace.photo_data, aiData.quality, qDetails, 'image/webp']
+                            );
+                            
+                            const photoId = insertResult.lastID;
+                            
                             await run('UPDATE people SET photo_url = ?, ai_metadata = ? WHERE id = ?', 
                                 [`/api/people/photo/${photoId}`, ai_metadata, person.id]);
+                            
                             updated++;
+                        } else {
+                            console.warn(`[Re-Evaluate] Failed to process image for person ${person.id} (AI service down?)`);
                         }
+                    } else {
+                        currentProgress.current++;
                     }
                 } catch (err) {
                     console.error(`Error re-evaluating person ${person.id}:`, err);
@@ -1069,21 +1089,44 @@ router.post('/:id/reset-profile-photo', authenticateToken, requireEditor, async 
  */
 router.post('/delete-all-immich-faces', authenticateToken, requireAdmin, async (req, res) => {
     try {
-        // Delete all records from immich_faces
         await run('DELETE FROM immich_faces');
-        
-        // Clear face descriptors and AI metadata for people linked to Immich
-        // This allows a clean re-test of the sync logic
+        await run('DELETE FROM person_photos WHERE quality IS NOT NULL');
         await run(`
             UPDATE people 
-            SET face_descriptor = NULL, ai_metadata = NULL 
+            SET face_descriptor = NULL, ai_metadata = NULL, photo_url = NULL
             WHERE immich_person_id IS NOT NULL
         `);
 
         res.json({ message: "All Immich-related face data cleared successfully" });
-    } catch (err) {
-        console.error("Delete Immich Faces error:", err);
-        res.status(500).json({ error: err.message });
+    } catch (error) {
+        console.error("Delete all immich faces error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * DELETE ALL PERSON PHOTOS (Deep Reset)
+ * Clears all profile photos and metadata from the people table.
+ */
+router.post('/delete-all-photos', authenticateToken, async (req, res) => {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: "Admin access required" });
+    
+    try {
+        console.log("[Maintenance] Starting Full Photo Reset");
+        
+        // 1. Delete all photo blobs that were marked as system/AI chosen (have quality score)
+        await run('DELETE FROM person_photos WHERE quality IS NOT NULL');
+        
+        // 2. Clear all profile photo references and AI metadata in people table
+        await run(`
+            UPDATE people 
+            SET photo_url = NULL, ai_metadata = NULL, face_descriptor = NULL
+        `);
+        
+        res.json({ message: "All profile photos and AI metadata have been reset." });
+    } catch (error) {
+        console.error("Delete all photos error:", error);
+        res.status(500).json({ error: error.message });
     }
 });
 

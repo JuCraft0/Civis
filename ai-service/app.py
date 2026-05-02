@@ -54,8 +54,6 @@ async def analyze(photo: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="Invalid image format")
 
         faces = face_app.get(img)
-        if not faces:
-            faces = face_app.get(img, det_thresh=0.3)
         
         if not faces:
             # Return empty structure if no face detected
@@ -104,8 +102,6 @@ async def represent(photo: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="Invalid image format")
 
         faces = face_app.get(img)
-        if not faces:
-            faces = face_app.get(img, det_thresh=0.3)
         
         if not faces:
             raise HTTPException(status_code=422, detail="No face detected in image")
@@ -149,12 +145,8 @@ async def verify(
         img2 = bytes_to_cv2(bytes2)
 
         faces1 = face_app.get(img1)
-        if not faces1:
-            faces1 = face_app.get(img1, det_thresh=0.3)
             
         faces2 = face_app.get(img2)
-        if not faces2:
-            faces2 = face_app.get(img2, det_thresh=0.3)
 
         if not faces1 or not faces2:
             raise HTTPException(status_code=422, detail="Face not detected in one or both images")
@@ -193,7 +185,7 @@ async def verify(
 def calculate_quality(face, img):
     """
     Calculates a quality score based on detection confidence, sharpness (blur), 
-    and frontality (pose symmetry).
+    frontality (pose symmetry), and face size.
     """
     # 1. Blur Detection using Laplacian on the face region
     x1, y1, x2, y2 = [int(v) for v in face.bbox]
@@ -210,32 +202,35 @@ def calculate_quality(face, img):
             pass
         
     # 2. Pose Estimation (Frontality) via landmark symmetry
-    # kps: [left_eye, right_eye, nose, left_mouth, right_mouth]
     pose_score = 0.5
     if hasattr(face, 'kps') and face.kps is not None and len(face.kps) == 5:
         kps = face.kps
-        # Calculate horizontal symmetry relative to the nose
         lx = abs(kps[0][0] - kps[2][0])
         rx = abs(kps[1][0] - kps[2][0])
-        # Calculate vertical symmetry (eyes should be horizontal)
         dy = abs(kps[0][1] - kps[1][1])
         
         horiz_sym = 1.0 - min(1.0, abs(lx - rx) / max(1.0, lx + rx))
         vert_sym = 1.0 - min(1.0, dy / max(1.0, abs(kps[0][0] - kps[1][0])))
-        
         pose_score = (horiz_sym * 0.7) + (vert_sym * 0.3)
+
+    # 3. Size Score (Prefer larger faces)
+    face_w = x2 - x1
+    face_h = y2 - y1
+    # Target size is 160x160 for a "good" quality crop
+    size_score = min(1.0, (face_w * face_h) / (160 * 160))
         
     # Normalize blur score (typical "good" values are > 100, "excellent" > 300)
-    norm_blur = min(1.0, blur_score / 500.0)
+    norm_blur = min(1.0, blur_score / 350.0)
     
     # Composite Quality Score (0.0 to 1.0)
-    # 40% Detection, 30% Blur/Sharpness, 30% Pose/Frontality
-    quality = (float(face.det_score) * 0.4) + (norm_blur * 0.3) + (pose_score * 0.3)
+    # 30% Detection, 20% Blur, 30% Pose, 20% Size
+    quality = (float(face.det_score) * 0.3) + (norm_blur * 0.2) + (pose_score * 0.3) + (size_score * 0.2)
     
     return {
         "score": float(quality),
         "blur": float(blur_score),
-        "pose": float(pose_score)
+        "pose": float(pose_score),
+        "size": float(size_score)
     }
 
 @app.post("/process")
@@ -255,8 +250,6 @@ async def process(photo: UploadFile = File(...)):
             raise HTTPException(status_code=422, detail="Invalid image format")
 
         faces = face_app.get(img)
-        if not faces:
-            faces = face_app.get(img, det_thresh=0.3)
         
         if not faces:
             return {
