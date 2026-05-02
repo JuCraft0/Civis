@@ -679,222 +679,281 @@ router.post('/:id/feedback', authenticateToken, async (req, res) => {
 });
 
 /**
- * IMMICH SYNC ENDPOINT
- * Fetches assets for a person from Immich and extracts the face descriptors.
+ * Helper function to sync a single person with Immich
  */
-router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, res) => {
-    try {
-        const personId = req.params.id;
-        const current = await get("SELECT * FROM people WHERE id = ?", [personId]);
-        if (!current) return res.status(404).json({ error: "Person not found" });
+async function syncImmichForPerson(personId) {
+    const person = await get('SELECT id, immich_person_id, face_descriptor, photo_url FROM people WHERE id = ?', [personId]);
+    if (!person || !person.immich_person_id) {
+        throw new Error("Person not found or not linked to Immich");
+    }
 
-        const immichPersonId = current.immich_person_id;
-        if (!immichPersonId) return res.status(400).json({ error: "No Immich Person ID associated with this user" });
+    const immichPersonId = person.immich_person_id;
+    const baseUrl = (process.env.IMMICH_URL || '').replace(/\/api\/?$/, '');
+    const apiKey = process.env.IMMICH_API_KEY;
 
-        const immichUrl = process.env.IMMICH_URL;
-        const immichApiKey = process.env.IMMICH_API_KEY;
+    if (!baseUrl || !apiKey) {
+        throw new Error("Immich configuration missing");
+    }
 
-        if (!immichUrl || !immichApiKey || immichApiKey === 'your-api-key') {
-            console.error(`[Immich Sync] Failed: Missing or default IMMICH_URL / IMMICH_API_KEY in environment.`);
-            return res.status(500).json({ error: "Immich is not configured in environment variables" });
-        }
+    const headers = { 'x-api-key': apiKey, 'Accept': 'application/json' };
 
-        // Normalize the base URL to prevent /api/api/ issues
-        const baseUrl = immichUrl.replace(/\/api\/?$/, '');
+    // Fetch assets for this person from Immich
+    const response = await fetch(`${baseUrl}/api/people/${immichPersonId}/assets`, { headers });
+    if (!response.ok) {
+        throw new Error(`Immich API error: ${response.status}`);
+    }
 
-        console.log(`[Immich Sync] Starting for person ${personId} with Immich ID ${immichPersonId}`);
+    const assets = await response.json();
+    console.log(`[Immich Sync] Found ${assets.length} assets for person ${personId} (Immich ID: ${immichPersonId})`);
 
-        const headers = { 'x-api-key': immichApiKey, 'Accept': 'application/json' };
+    // Limit to most recent 200 assets to keep processing time reasonable
+    const assetsToProcess = assets.slice(0, 200);
 
-        // 1. Get Immich Person Assets using search/metadata
-        const assetsRes = await fetch(`${baseUrl}/api/search/metadata`, { 
-            method: 'POST',
-            headers: { 
-                'x-api-key': immichApiKey, 
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ personIds: [immichPersonId] })
-        });
-        
-        if (!assetsRes.ok) {
-            const errText = await assetsRes.text();
-            console.error(`[Immich Sync] Failed to fetch assets. Status: ${assetsRes.status}, Body: ${errText}`);
-            return res.status(assetsRes.status).json({ error: "Failed to fetch assets from Immich" });
-        }
-        
-        const searchResult = await assetsRes.json();
-        const assets = searchResult.assets?.items || [];
-        
-        if (!assets || assets.length === 0) {
-            return res.status(404).json({ error: "No assets found for this person in Immich" });
-        }
+    let allDescriptors = [];
+    if (person.face_descriptor) {
+        try {
+            const parsed = JSON.parse(person.face_descriptor);
+            if (Array.isArray(parsed)) {
+                if (Array.isArray(parsed[0])) {
+                    allDescriptors = parsed;
+                } else {
+                    allDescriptors = [parsed];
+                }
+            }
+        } catch (e) {}
+    }
 
-        // Limit to top 20 assets to avoid overwhelming the server
-        const assetsToProcess = assets.slice(0, 20);
-        let allDescriptors = [];
-        if (current.face_descriptor) {
+    let processedCount = 0;
+    let skippedCount = 0;
+    let bestFaceData = null;
+    let bestFaceBuffer = null;
+
+    // Clear existing faces for this person
+    await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
+
+    for (const asset of assetsToProcess) {
+        try {
+            // Fetch the thumbnail of the asset - use 'preview' for better quality/accuracy
+            const imageRes = await fetch(`${baseUrl}/api/assets/${asset.id}/thumbnail?size=preview`, { headers });
+            if (!imageRes.ok) continue;
+            
+            const arrayBuffer = await imageRes.arrayBuffer();
+            const imageBuffer = Buffer.from(arrayBuffer);
+
+            // Fetch asset details to check if we can get the face bounding box
+            let faceInfo = null;
             try {
-                const parsed = JSON.parse(current.face_descriptor);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                    if (Array.isArray(parsed[0])) {
-                        allDescriptors = parsed;
-                    } else {
-                        allDescriptors = [parsed];
+                const assetDetailsRes = await fetch(`${baseUrl}/api/assets/${asset.id}`, { headers });
+                if (assetDetailsRes.ok) {
+                    const assetDetails = await assetDetailsRes.json();
+                    if (assetDetails.people) {
+                        const personData = assetDetails.people.find(p => p.id === immichPersonId);
+                        if (personData && personData.faces && personData.faces.length > 0) {
+                            faceInfo = personData.faces[0];
+                        }
                     }
                 }
             } catch (e) {}
-        }
 
-        let processedCount = 0;
-        let skippedCount = 0;
-        let firstFaceBuffer = null;
+            let finalBuffer = imageBuffer;
 
-        // Clear existing faces for this person
-        await run('DELETE FROM immich_faces WHERE person_id = ?', [personId]);
-
-        for (const asset of assetsToProcess) {
-            try {
-                // Fetch the thumbnail of the asset - use 'preview' for better quality/accuracy
-                const imageRes = await fetch(`${baseUrl}/api/assets/${asset.id}/thumbnail?size=preview`, { headers });
-                if (!imageRes.ok) continue;
+            if (faceInfo && faceInfo.boundingBoxX1 !== undefined) {
+                // We have bounding box! Let's crop it using sharp
+                const metadata = await sharp(imageBuffer).metadata();
                 
-                const arrayBuffer = await imageRes.arrayBuffer();
-                const imageBuffer = Buffer.from(arrayBuffer);
+                const originalWidth = faceInfo.imageWidth || metadata.width;
+                const originalHeight = faceInfo.imageHeight || metadata.height;
+                
+                const widthRatio = metadata.width / originalWidth;
+                const heightRatio = metadata.height / originalHeight;
 
-                // Fetch asset details to check if we can get the face bounding box
-                let faceInfo = null;
-                try {
-                    const assetDetailsRes = await fetch(`${baseUrl}/api/assets/${asset.id}`, { headers });
-                    if (assetDetailsRes.ok) {
-                        const assetDetails = await assetDetailsRes.json();
-                        if (assetDetails.people) {
-                            const personData = assetDetails.people.find(p => p.id === immichPersonId);
-                            if (personData && personData.faces && personData.faces.length > 0) {
-                                faceInfo = personData.faces[0];
-                                console.log(`[Immich Sync] Found face info for asset ${asset.id}`);
-                            } else {
-                                console.log(`[Immich Sync] No face info found for person ${immichPersonId} in asset ${asset.id}`);
-                            }
-                        } else {
-                            console.log(`[Immich Sync] Asset ${asset.id} has no people array`);
-                        }
-                    } else {
-                        console.log(`[Immich Sync] Failed to fetch details for asset ${asset.id}: ${assetDetailsRes.status}`);
-                    }
-                } catch (e) {
-                    // Ignore, we will fallback to processing the whole image
+                const left = Math.max(0, Math.round(faceInfo.boundingBoxX1 * widthRatio));
+                const top = Math.max(0, Math.round(faceInfo.boundingBoxY1 * heightRatio));
+                const width = Math.round((faceInfo.boundingBoxX2 - faceInfo.boundingBoxX1) * widthRatio);
+                const height = Math.round((faceInfo.boundingBoxY2 - faceInfo.boundingBoxY1) * heightRatio);
+                
+                // Add 50% padding (more context helps AI detection)
+                const padX = Math.round(width * 0.5);
+                const padY = Math.round(height * 0.5);
+                
+                const cropLeft = Math.max(0, left - padX);
+                const cropTop = Math.max(0, top - padY);
+                const cropWidth = Math.min(metadata.width - cropLeft, width + padX * 2);
+                const cropHeight = Math.min(metadata.height - cropTop, height + padY * 2);
+
+                if (cropWidth > 0 && cropHeight > 0) {
+                    finalBuffer = await sharp(imageBuffer)
+                        .extract({ left: cropLeft, top: cropTop, width: cropWidth, height: cropHeight })
+                        .toBuffer();
                 }
+            }
 
-                let finalBuffer = imageBuffer;
-
-                if (faceInfo && faceInfo.boundingBoxX1 !== undefined) {
-                    // We have bounding box! Let's crop it using sharp
-                    const metadata = await sharp(imageBuffer).metadata();
-                    
-                    // Coordinates in Immich are usually absolute relative to imageWidth/imageHeight
-                    const originalWidth = faceInfo.imageWidth || metadata.width;
-                    const originalHeight = faceInfo.imageHeight || metadata.height;
-                    
-                    const widthRatio = metadata.width / originalWidth;
-                    const heightRatio = metadata.height / originalHeight;
-
-                    const left = Math.max(0, Math.round(faceInfo.boundingBoxX1 * widthRatio));
-                    const top = Math.max(0, Math.round(faceInfo.boundingBoxY1 * heightRatio));
-                    const width = Math.round((faceInfo.boundingBoxX2 - faceInfo.boundingBoxX1) * widthRatio);
-                    const height = Math.round((faceInfo.boundingBoxY2 - faceInfo.boundingBoxY1) * heightRatio);
-                    
-                    // Add 50% padding (more context helps AI detection)
-                    const padX = Math.round(width * 0.5);
-                    const padY = Math.round(height * 0.5);
-                    
-                    const cropLeft = Math.max(0, left - padX);
-                    const cropTop = Math.max(0, top - padY);
-                    const cropWidth = Math.min(metadata.width - cropLeft, width + padX * 2);
-                    const cropHeight = Math.min(metadata.height - cropTop, height + padY * 2);
-
-                    // Prevent invalid crop sizes
-                    if (cropWidth > 0 && cropHeight > 0) {
-                        finalBuffer = await sharp(imageBuffer)
-                            .extract({ left: cropLeft, top: cropTop, width: cropWidth, height: cropHeight })
-                            .toBuffer();
-                    }
-                } else {
-                    // If no bounding box is available, check if we might have multiple faces
-                    // We will let the processImage handle it, but if it detects multiple faces, it might learn the wrong one.
-                    // But our ai-service currently only returns one descriptor.
-                }
-
-                const faceData = await processImage(finalBuffer);
-                if (faceData && faceData.descriptor) {
-                    allDescriptors.push(faceData.descriptor);
-                    
-                    // Save the cropped face for UI display
-                    await run(
-                        'INSERT INTO immich_faces (person_id, asset_id, photo_data) VALUES (?, ?, ?)',
-                        [personId, asset.id, finalBuffer]
-                    );
-
-                    // Also save to main gallery (person_photos) if we have less than 10 photos from Immich
-                    const galleryCount = await get('SELECT COUNT(*) as count FROM person_photos WHERE person_id = ?', [personId]);
-                    if (galleryCount.count < 10) {
-                        await run(
-                            'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
-                            [personId, finalBuffer, 'image/webp']
-                        );
-                    }
-
-                    processedCount++;
-                    console.log(`[Immich Sync] Successfully processed and saved face for asset ${asset.id}`);
-                    
-                    if (!firstFaceBuffer) firstFaceBuffer = finalBuffer;
-
-                    if (allDescriptors.length >= 100) {
-                        // Max 100 descriptors
+            const faceData = await processImage(finalBuffer);
+            if (faceData && faceData.descriptor) {
+                // Avoid adding extremely similar faces (burst shots)
+                let isRedundant = false;
+                for (const existing of allDescriptors) {
+                    if (calculateSimilarity(faceData.descriptor, existing) < 0.1) {
+                        isRedundant = true;
                         break;
                     }
-                } else {
-                    console.log(`[Immich Sync] AI Service could not find face in asset ${asset.id}`);
-                    skippedCount++;
                 }
 
-            } catch (err) {
-                console.error(`[Immich Sync] Error processing asset ${asset.id}:`, err.message);
+                if (isRedundant) {
+                    skippedCount++;
+                    continue;
+                }
+
+                // Track the face with the highest confidence to use as primary profile picture
+                if (!bestFaceData || faceData.confidence > bestFaceData.confidence) {
+                    bestFaceData = faceData;
+                    bestFaceBuffer = finalBuffer;
+                }
+
+                allDescriptors.push(faceData.descriptor);
+                
+                // Save the cropped face for UI display
+                await run(
+                    'INSERT INTO immich_faces (person_id, asset_id, photo_data) VALUES (?, ?, ?)',
+                    [personId, asset.id, finalBuffer]
+                );
+
+                // Also save to main gallery (person_photos) if we have less than 10 photos from Immich
+                const galleryCount = await get('SELECT COUNT(*) as count FROM person_photos WHERE person_id = ?', [personId]);
+                if (galleryCount.count < 10) {
+                    await run(
+                        'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
+                        [personId, finalBuffer, 'image/webp']
+                    );
+                }
+
+                processedCount++;
+                
+                if (allDescriptors.length >= 100) break;
+            } else {
                 skippedCount++;
+            }
+
+        } catch (err) {
+            console.error(`[Immich Sync] Error processing asset ${asset.id}:`, err.message);
+            skippedCount++;
+        }
+    }
+
+    // Keep at most 100 descriptors to save space
+    if (allDescriptors.length > 100) {
+        allDescriptors = allDescriptors.slice(allDescriptors.length - 100);
+    }
+
+    // Update descriptors
+    await run(
+        'UPDATE people SET face_descriptor = ? WHERE id = ?',
+        [JSON.stringify(allDescriptors), personId]
+    );
+
+    // Primary Identification
+    if (bestFaceData && bestFaceBuffer) {
+        const shouldUpdateProfile = !person.photo_url || bestFaceData.confidence > 0.9;
+        
+        if (shouldUpdateProfile) {
+            const result = await run(
+                'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
+                [personId, bestFaceBuffer, 'image/webp']
+            );
+            const photoId = result.lastID;
+            
+            const ai_metadata = JSON.stringify({
+                estimated_age: bestFaceData.estimatedAge,
+                estimated_gender: bestFaceData.estimatedGender,
+                confidence: bestFaceData.confidence,
+                bbox: bestFaceData.bbox || null,
+                width: bestFaceData.width || 800,
+                height: bestFaceData.height || 800
+            });
+
+            await run(
+                'UPDATE people SET photo_url = ?, ai_metadata = ? WHERE id = ?', 
+                [`/api/people/photo/${photoId}`, ai_metadata, personId]
+            );
+        }
+    }
+
+    return { processedCount, skippedCount, totalDescriptors: allDescriptors.length, bestConfidence: bestFaceData?.confidence || 0 };
+}
+
+/**
+ * POST /api/people/:id/sync-immich
+ * Synchronizes faces for a specific person from Immich
+ */
+router.post('/:id/sync-immich', authenticateToken, requireEditor, async (req, res) => {
+    try {
+        const result = await syncImmichForPerson(req.params.id);
+        res.json({ message: "Immich sync completed", ...result });
+    } catch (err) {
+        console.error("Immich Sync error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * POST /api/people/sync-all-immich
+ * Synchronizes all people who have an Immich ID
+ */
+router.post('/sync-all-immich', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const people = await all('SELECT id FROM people WHERE immich_person_id IS NOT NULL');
+        console.log(`[Immich Sync All] Starting sync for ${people.length} people`);
+        
+        let totalProcessed = 0;
+        let totalSkipped = 0;
+        let successful = 0;
+        let failed = 0;
+
+        for (const person of people) {
+            try {
+                const result = await syncImmichForPerson(person.id);
+                totalProcessed += result.processedCount;
+                totalSkipped += result.skippedCount;
+                successful++;
+            } catch (err) {
+                console.error(`[Immich Sync All] Failed to sync person ${person.id}:`, err.message);
+                failed++;
             }
         }
 
-        // Keep at most 100 descriptors to save space
-        if (allDescriptors.length > 100) {
-            allDescriptors = allDescriptors.slice(allDescriptors.length - 100);
-        }
-
-        await run(
-            'UPDATE people SET face_descriptor = ? WHERE id = ?',
-            [JSON.stringify(allDescriptors), personId]
-        );
-
-        // Auto-set profile picture if none exists
-        if (!current?.photo_url && firstFaceBuffer) {
-             const result = await run(
-                'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
-                [personId, firstFaceBuffer, 'image/webp']
-            );
-            const photoId = result.lastID;
-            await run('UPDATE people SET photo_url = ? WHERE id = ?', [`/api/people/photo/${photoId}`, personId]);
-            console.log(`[Immich Sync] Automatically set profile picture for person ${personId}`);
-        }
-
-        console.log(`[Immich Sync] Finished. Processed: ${processedCount}, Skipped: ${skippedCount}, Total Descriptors: ${allDescriptors.length}`);
         res.json({ 
-            message: "Immich sync completed", 
-            processed: processedCount, 
-            skipped: skippedCount,
-            total_descriptors: allDescriptors.length
+            message: "Bulk Immich sync completed", 
+            successful, 
+            failed, 
+            totalProcessed, 
+            totalSkipped 
         });
-
     } catch (err) {
-        console.error("Immich Sync error:", err);
+        console.error("Bulk Immich Sync error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * POST /api/people/delete-all-immich-faces
+ * Deletes all stored Immich face images and clears related metadata for testing
+ */
+router.post('/delete-all-immich-faces', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        // Delete all records from immich_faces
+        await run('DELETE FROM immich_faces');
+        
+        // Clear face descriptors and AI metadata for people linked to Immich
+        // This allows a clean re-test of the sync logic
+        await run(`
+            UPDATE people 
+            SET face_descriptor = NULL, ai_metadata = NULL 
+            WHERE immich_person_id IS NOT NULL
+        `);
+
+        res.json({ message: "All Immich-related face data cleared successfully" });
+    } catch (err) {
+        console.error("Delete Immich Faces error:", err);
         res.status(500).json({ error: err.message });
     }
 });

@@ -116,6 +116,16 @@ export const submitFeedback = async (id, embedding, isCorrect) => {
     return response.data;
 };
 
+export const syncAllImmichPeople = async () => {
+    const response = await api.post('/people/sync-all-immich');
+    return response.data;
+};
+
+export const deleteAllImmichFaces = async () => {
+    const response = await api.post('/people/delete-all-immich-faces');
+    return response.data;
+};
+
 // Admin Functions
 export const createUser = async (userData) => {
     const response = await api.post('/users', userData);

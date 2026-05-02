@@ -8,7 +8,7 @@ import UserForm from '../components/UserForm';
 import NetworkGraph from '../components/NetworkGraph';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces } from '../services/api';
+import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces, syncAllImmichPeople, deleteAllImmichFaces } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HUDSelect from '../components/HUDSelect';
 import { getGenderedStatus } from '../utils/statusHelpers';
@@ -279,6 +279,43 @@ const Dashboard = () => {
         } catch (error) {
             console.error("Reindex error:", error);
             setToast({ message: "Fehler während der Re-Indexierung", type: "error" });
+        } finally {
+            setReindexing(false);
+        }
+    };
+
+    const handleSyncAllImmich = async () => {
+        if (!window.confirm("Möchten Sie wirklich die Immich-Synchronisierung für ALLE verknüpften Personen wiederholen? Dies kann bei vielen Personen lange dauern.")) return;
+        
+        setReindexing(true);
+        setToast({ message: "Globale Immich-Synchronisierung gestartet...", type: "success" });
+        
+        try {
+            const result = await syncAllImmichPeople();
+            setToast({ 
+                message: `Sync abgeschlossen! ${result.successful} erfolgreich, ${result.failed} fehlgeschlagen.`, 
+                type: "success" 
+            });
+            fetchPeople();
+        } catch (error) {
+            console.error("Bulk sync error:", error);
+            setToast({ message: "Fehler bei der globalen Synchronisierung", type: "error" });
+        } finally {
+            setReindexing(false);
+        }
+    };
+
+    const handleDeleteAllImmichImages = async () => {
+        if (!window.confirm("Möchten Sie wirklich ALLE Immich-Bilder und Metadaten löschen? Dies setzt den Test-Status zurück.")) return;
+        
+        setReindexing(true);
+        try {
+            await deleteAllImmichFaces();
+            setToast({ message: "Alle Immich-Daten erfolgreich gelöscht.", type: "success" });
+            fetchPeople();
+        } catch (error) {
+            console.error("Delete all faces error:", error);
+            setToast({ message: "Fehler beim Löschen der Immich-Daten", type: "error" });
         } finally {
             setReindexing(false);
         }
@@ -566,9 +603,36 @@ const Dashboard = () => {
                                             ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
                                             : 'bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border-orange-500/20'
                                         }`}
+                                        title="Alle Gesichter im System neu indexieren"
                                     >
                                         {reindexing ? <Loader size={16} className="animate-spin" /> : <Database size={16} />}
-                                        {reindexing ? 'Indexiere...' : 'Alles Neu Indexieren'}
+                                        {reindexing ? 'Verarbeite...' : 'Neu Indexieren'}
+                                    </button>
+                                    <button
+                                        onClick={handleSyncAllImmich}
+                                        disabled={reindexing}
+                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
+                                            reindexing 
+                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
+                                            : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border-blue-500/20'
+                                        }`}
+                                        title="Immich Sync für alle verknüpften Personen wiederholen"
+                                    >
+                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <Scan size={16} />}
+                                        {reindexing ? 'Syncing...' : 'Immich Sync All'}
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteAllImmichImages}
+                                        disabled={reindexing}
+                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
+                                            reindexing 
+                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
+                                            : 'bg-red-600/20 text-red-400 hover:bg-red-600/30 border-red-500/20'
+                                        }`}
+                                        title="Alle Immich-bezogenen Bilder und Metadaten löschen"
+                                    >
+                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                        {reindexing ? 'Lösche...' : 'Immich Clear'}
                                     </button>
                                     <button
                                         onClick={() => {
