@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Loader, LogOut, Shield, Users, FolderTree, Trash2, Edit3, ChevronRight, ChevronDown, LayoutGrid, ArrowRight, Share2, Scan, Database } from 'lucide-react';
+import { Plus, Search, Loader, LogOut, Shield, Users, FolderTree, Trash2, Edit3, ChevronRight, ChevronDown, LayoutGrid, ArrowRight, Share2, Scan, Database, UserX } from 'lucide-react';
 import PersonCard from '../components/PersonCard';
 import PersonForm from '../components/PersonForm';
 import UserForm from '../components/UserForm';
 import NetworkGraph from '../components/NetworkGraph';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces, syncAllImmichPeople, deleteAllImmichFaces } from '../services/api';
+import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces, syncAllImmichPeople, deleteAllImmichFaces, deleteAllPeoplePhotos } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HUDSelect from '../components/HUDSelect';
 import { getGenderedStatus } from '../utils/statusHelpers';
@@ -306,16 +306,30 @@ const Dashboard = () => {
     };
 
     const handleDeleteAllImmichImages = async () => {
-        if (!window.confirm("Möchten Sie wirklich ALLE Immich-Bilder und Metadaten löschen? Dies setzt den Test-Status zurück.")) return;
+        if (!window.confirm("Bist du sicher? Alle Immich-bezogenen Bilder und Metadaten werden gelöscht!")) return;
         
         setReindexing(true);
         try {
-            await deleteAllImmichFaces();
-            setToast({ message: "Alle Immich-Daten erfolgreich gelöscht.", type: "success" });
+            const result = await deleteAllImmichFaces();
+            setToast({ message: result.message || 'Immich-Bilder gelöscht', type: 'success' });
             fetchPeople();
         } catch (error) {
-            console.error("Delete all faces error:", error);
-            setToast({ message: "Fehler beim Löschen der Immich-Daten", type: "error" });
+            setToast({ message: error.response?.data?.error || 'Fehler beim Löschen', type: 'error' });
+        } finally {
+            setReindexing(false);
+        }
+    };
+
+    const handleDeleteAllPeoplePhotos = async () => {
+        if (!window.confirm("⚠️ KRITISCHE AKTION: Bist du absolut sicher? Dies löscht ALLE Personen-Fotos im System und setzt alle Profilbilder zurück! Dies kann nicht rückgängig gemacht werden.")) return;
+        
+        setReindexing(true);
+        try {
+            const result = await deleteAllPeoplePhotos();
+            setToast({ message: result.message || 'Alle Fotos gelöscht', type: 'success' });
+            fetchPeople();
+        } catch (error) {
+            setToast({ message: error.response?.data?.error || 'Fehler beim Löschen', type: 'error' });
         } finally {
             setReindexing(false);
         }
@@ -633,6 +647,19 @@ const Dashboard = () => {
                                     >
                                         {reindexing ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
                                         {reindexing ? 'Lösche...' : 'Immich Clear'}
+                                    </button>
+                                    <button
+                                        onClick={handleDeleteAllPeoplePhotos}
+                                        disabled={reindexing}
+                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
+                                            reindexing 
+                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
+                                            : 'bg-red-800/20 text-red-500 hover:bg-red-800/30 border-red-700/20'
+                                        }`}
+                                        title="ALLE Personen-Bilder (auch manuelle) löschen und Profilbilder zurücksetzen"
+                                    >
+                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <UserX size={16} />}
+                                        {reindexing ? 'Lösche...' : 'Delete All Photos'}
                                     </button>
                                     <button
                                         onClick={() => {

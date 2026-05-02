@@ -818,21 +818,8 @@ async function syncImmichForPerson(personId) {
                     continue;
                 }
 
-                // Track the face with the highest score to use as primary profile picture
-                // We combine:
-                // - detection confidence (det_score)
-                // - person count (portraits with 1 person are better)
-                // - face size (larger faces are usually better, but with low weight to avoid blurry close-ups)
-                const faceArea = faceData.bbox ? (faceData.bbox[2] - faceData.bbox[0]) * (faceData.bbox[3] - faceData.bbox[1]) : 0;
-                const faceAreaRatio = faceData.width ? faceArea / (faceData.width * faceData.height) : 0;
-                
-                let qualityScore = faceData.confidence;
-                
-                // Reward portraits (only 1 person in photo)
-                if (totalPeopleInPhoto === 1) qualityScore += 0.15;
-                
-                // Minor reward for larger faces, but cap it to avoid extreme close-ups dominating
-                qualityScore += Math.min(0.1, faceAreaRatio * 0.5);
+                // Use the composite quality score from the AI service (combines confidence, blur, and pose)
+                let qualityScore = faceData.quality || 0;
                 
                 if (!bestFaceData || qualityScore > bestFaceScore) {
                     bestFaceData = faceData;
@@ -1100,6 +1087,64 @@ router.get('/:id/immich-face/:assetId', authenticateToken, async (req, res) => {
         res.send(face.photo_data);
     } catch (err) {
         console.error("GET immich-face error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * POST /api/people/:id/set-primary-photo
+ * Manually set the primary photo for a person from an existing face
+ */
+router.post('/:id/set-primary-photo', authenticateToken, async (req, res) => {
+    try {
+        const personId = req.params.id;
+        const { assetId, photoId, source } = req.body;
+        
+        let photoData = null;
+        
+        if (source === 'immich') {
+            const face = await get("SELECT photo_data FROM immich_faces WHERE person_id = ? AND asset_id = ?", [personId, assetId]);
+            photoData = face ? face.photo_data : null;
+        } else if (photoId) {
+            const photo = await get("SELECT photo_data FROM person_photos WHERE id = ?", [photoId]);
+            photoData = photo ? photo.photo_data : null;
+        }
+        
+        if (!photoData) {
+            return res.status(404).json({ error: "Photo not found" });
+        }
+
+        // Save to person_photos if it's not already there
+        const result = await run(
+            'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
+            [personId, photoData, 'image/webp']
+        );
+        const newPhotoId = result.lastID;
+
+        await run(
+            'UPDATE people SET photo_url = ? WHERE id = ?',
+            [`/api/people/photo/${newPhotoId}`, personId]
+        );
+
+        res.json({ message: "Profilbild aktualisiert", photoUrl: `/api/people/photo/${newPhotoId}` });
+    } catch (err) {
+        console.error("set-primary-photo error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * POST /api/people/delete-all-photos
+ * Destructive debug operation: Deletes all person photos and resets profile pictures
+ */
+router.post('/delete-all-photos', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        await run('DELETE FROM person_photos');
+        await run('DELETE FROM immich_faces');
+        await run('UPDATE people SET photo_url = NULL, ai_metadata = NULL');
+        res.json({ message: "Alle Personen-Bilder wurden erfolgreich gelöscht" });
+    } catch (err) {
+        console.error("delete-all-photos error:", err);
         res.status(500).json({ error: err.message });
     }
 });

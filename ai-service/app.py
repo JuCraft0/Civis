@@ -190,11 +190,58 @@ async def verify(
         logger.error(f"/verify error: {e}")
         raise HTTPException(status_code=422, detail=f"Verification failed: {str(e)}")
 
+def calculate_quality(face, img):
+    """
+    Calculates a quality score based on detection confidence, sharpness (blur), 
+    and frontality (pose symmetry).
+    """
+    # 1. Blur Detection using Laplacian on the face region
+    x1, y1, x2, y2 = [int(v) for v in face.bbox]
+    x1, y1 = max(0, x1), max(0, y1)
+    x2, y2 = min(img.shape[1], x2), min(img.shape[0], y2)
+    
+    blur_score = 0
+    if x2 > x1 and y2 > y1:
+        try:
+            face_img = img[y1:y2, x1:x2]
+            gray = cv2.cvtColor(face_img, cv2.COLOR_BGR2GRAY)
+            blur_score = cv2.Laplacian(gray, cv2.CV_64F).var()
+        except:
+            pass
+        
+    # 2. Pose Estimation (Frontality) via landmark symmetry
+    # kps: [left_eye, right_eye, nose, left_mouth, right_mouth]
+    pose_score = 0.5
+    if hasattr(face, 'kps') and face.kps is not None and len(face.kps) == 5:
+        kps = face.kps
+        # Calculate horizontal symmetry relative to the nose
+        lx = abs(kps[0][0] - kps[2][0])
+        rx = abs(kps[1][0] - kps[2][0])
+        # Calculate vertical symmetry (eyes should be horizontal)
+        dy = abs(kps[0][1] - kps[1][1])
+        
+        horiz_sym = 1.0 - min(1.0, abs(lx - rx) / max(1.0, lx + rx))
+        vert_sym = 1.0 - min(1.0, dy / max(1.0, abs(kps[0][0] - kps[1][0])))
+        
+        pose_score = (horiz_sym * 0.7) + (vert_sym * 0.3)
+        
+    # Normalize blur score (typical "good" values are > 100, "excellent" > 300)
+    norm_blur = min(1.0, blur_score / 300.0)
+    
+    # Composite Quality Score (0.0 to 1.0)
+    quality = (float(face.det_score) * 0.4) + (norm_blur * 0.4) + (pose_score * 0.2)
+    
+    return {
+        "score": float(quality),
+        "blur": float(blur_score),
+        "pose": float(pose_score)
+    }
+
 @app.post("/process")
 async def process(photo: UploadFile = File(...)):
     """
     Combines analyze and represent in a single call to save processing time.
-    Returns embedding, age, and gender.
+    Returns embedding, age, gender, and a quality score.
     """
     if not face_app:
         raise HTTPException(status_code=503, detail="AI Service is still initializing")
@@ -216,17 +263,22 @@ async def process(photo: UploadFile = File(...)):
                 "age": None,
                 "gender": None,
                 "confidence": 0,
+                "quality": 0,
                 "bbox": None
             }
 
         # Pick largest face
         face = sorted(faces, key=lambda x: (x.bbox[2]-x.bbox[0])*(x.bbox[3]-x.bbox[1]), reverse=True)[0]
         
+        quality_data = calculate_quality(face, img)
+        
         return {
             "embedding": face.normed_embedding.tolist(),
             "age": int(face.age),
             "gender": "Woman" if face.gender == 0 else "Man",
             "confidence": float(face.det_score),
+            "quality": quality_data["score"],
+            "quality_details": quality_data,
             "bbox": face.bbox.tolist(),
             "width": img.shape[1],
             "height": img.shape[0]

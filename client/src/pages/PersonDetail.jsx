@@ -5,7 +5,7 @@ import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, P
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces, setPrimaryPhoto } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
@@ -47,7 +47,7 @@ const AuthenticatedImage = ({ src, alt, className }) => {
     return <img src={imageSrc} alt={alt} className={className} />;
 };
 
-const ImmichFacesModule = ({ personId, faces }) => {
+const ImmichFacesModule = ({ personId, faces, onSetPrimary }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     
     if (!faces || faces.length === 0) return null;
@@ -70,14 +70,20 @@ const ImmichFacesModule = ({ personId, faces }) => {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                            {faces.slice(0, 20).map((assetId, idx) => (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                            {faces.map((assetId, idx) => (
                                 <div key={assetId} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
                                     <AuthenticatedImage
                                         src={`/api/people/${personId}/immich-face/${assetId}`}
                                         alt={`Face ${idx + 1}`}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                     />
+                                    <button 
+                                        onClick={() => onSetPrimary(assetId)}
+                                        className="absolute inset-0 bg-blue-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold uppercase text-white p-1 text-center"
+                                    >
+                                        Als Profilbild
+                                    </button>
                                 </div>
                             ))}
                         </div>
@@ -182,6 +188,18 @@ const PersonDetail = () => {
             setToast({ message: 'Synchronisation fehlgeschlagen', type: 'error' });
         } finally {
             setIsSyncing(false);
+        }
+    };
+
+    const handleSetPrimaryPhoto = async (assetId) => {
+        try {
+            setToast({ message: 'Aktualisiere Profilbild...', type: 'info' });
+            await setPrimaryPhoto(id, { assetId, source: 'immich' });
+            setToast({ message: 'Profilbild erfolgreich aktualisiert', type: 'success' });
+            fetchData();
+        } catch (error) {
+            console.error("Set primary photo failed", error);
+            setToast({ message: 'Fehler beim Aktualisieren des Profilbilds', type: 'error' });
         }
     };
 
@@ -542,7 +560,7 @@ const PersonDetail = () => {
             color: 'cyan',
             fullWidth: true,
             isActive: (p) => immichFaces && immichFaces.length > 0,
-            render: (p) => <ImmichFacesModule personId={p.id} faces={immichFaces} />
+            render: (p) => <ImmichFacesModule personId={p.id} faces={immichFaces} onSetPrimary={handleSetPrimaryPhoto} />
         }
     ];
 

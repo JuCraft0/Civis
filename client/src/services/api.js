@@ -126,6 +126,16 @@ export const deleteAllImmichFaces = async () => {
     return response.data;
 };
 
+export const deleteAllPeoplePhotos = async () => {
+    const response = await api.post('/people/delete-all-photos');
+    return response.data;
+};
+
+export const setPrimaryPhoto = async (personId, data) => {
+    const response = await api.post(`/people/${personId}/set-primary-photo`, data);
+    return response.data;
+};
+
 // Admin Functions
 export const createUser = async (userData) => {
     const response = await api.post('/users', userData);

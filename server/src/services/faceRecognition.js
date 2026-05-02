@@ -159,6 +159,8 @@ async function processImage(imageBuffer) {
             estimatedAge,
             estimatedGender,
             confidence: data.confidence || 1.0,
+            quality: data.quality || 0,
+            qualityDetails: data.quality_details || null,
             bbox: data.bbox || null,
             width: data.width || null,
             height: data.height || null,
