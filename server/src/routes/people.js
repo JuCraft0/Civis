@@ -9,10 +9,17 @@ const { buildGroupPathAsync, syncRelationships, updateAllNeighbors, updatePerson
 const { processImage, calculateSimilarity, verifyFaces, getEmbedding } = require('../services/faceRecognition');
 const fetch = require('node-fetch');
 
+// Progress tracking for long-running operations
+let currentProgress = { active: false, current: 0, total: 0, status: '', startTime: null };
+
 const router = express.Router();
 
 const upload = multer({
     limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB limit
+});
+
+router.get('/maintenance-progress', authenticateToken, (req, res) => {
+    res.json(currentProgress);
 });
 
 async function getFullPerson(personId) {
@@ -831,16 +838,16 @@ async function syncImmichForPerson(personId) {
                 
                 // Save the cropped face for UI display
                 await run(
-                    'INSERT INTO immich_faces (person_id, asset_id, photo_data) VALUES (?, ?, ?)',
-                    [personId, asset.id, finalBuffer]
+                    'INSERT INTO immich_faces (person_id, asset_id, photo_data, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
+                    [personId, asset.id, finalBuffer, qualityScore, JSON.stringify(faceData.qualityDetails)]
                 );
 
                 // Also save to main gallery (person_photos) if we have less than 10 photos from Immich
                 const galleryCount = await get('SELECT COUNT(*) as count FROM person_photos WHERE person_id = ?', [personId]);
                 if (galleryCount.count < 10) {
                     await run(
-                        'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
-                        [personId, finalBuffer, 'image/webp']
+                        'INSERT INTO person_photos (person_id, photo_data, mime_type, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
+                        [personId, finalBuffer, 'image/webp', qualityScore, JSON.stringify(faceData.qualityDetails)]
                     );
                 }
 
@@ -878,8 +885,8 @@ async function syncImmichForPerson(personId) {
         
         if (shouldUpdateProfile) {
             const result = await run(
-                'INSERT INTO person_photos (person_id, photo_data, mime_type) VALUES (?, ?, ?)',
-                [personId, bestFaceBuffer, 'image/webp']
+                'INSERT INTO person_photos (person_id, photo_data, mime_type, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
+                [personId, bestFaceBuffer, 'image/webp', bestFaceScore, JSON.stringify(bestFaceData.qualityDetails)]
             );
             const photoId = result.lastID;
             
@@ -925,32 +932,112 @@ router.post('/sync-all-immich', authenticateToken, requireAdmin, async (req, res
         const people = await all('SELECT id FROM people WHERE immich_person_id IS NOT NULL');
         console.log(`[Immich Sync All] Starting sync for ${people.length} people`);
         
-        let totalProcessed = 0;
-        let totalSkipped = 0;
-        let successful = 0;
-        let failed = 0;
+        // Return 202 Accepted if it's a long task
+        res.status(202).json({ message: "Bulk sync started", total: people.length });
 
-        for (const person of people) {
-            try {
-                const result = await syncImmichForPerson(person.id);
-                totalProcessed += result.processedCount;
-                totalSkipped += result.skippedCount;
-                successful++;
-            } catch (err) {
-                console.error(`[Immich Sync All] Failed to sync person ${person.id}:`, err.message);
-                failed++;
+        // Run in background
+        (async () => {
+            currentProgress = { active: true, current: 0, total: people.length, status: 'Synchronisiere mit Immich...', startTime: new Date() };
+            
+            let successful = 0;
+            let failed = 0;
+
+            for (const person of people) {
+                try {
+                    await syncImmichForPerson(person.id);
+                    successful++;
+                } catch (err) {
+                    console.error(`[Immich Sync All] Failed to sync person ${person.id}:`, err.message);
+                    failed++;
+                }
+                currentProgress.current++;
             }
-        }
-
-        res.json({ 
-            message: "Bulk Immich sync completed", 
-            successful, 
-            failed, 
-            totalProcessed, 
-            totalSkipped 
-        });
+            
+            currentProgress.active = false;
+            currentProgress.status = `Sync abgeschlossen: ${successful} erfolgreich, ${failed} fehlgeschlagen.`;
+        })();
     } catch (err) {
-        console.error("Bulk Immich Sync error:", err);
+        console.error("Immich Sync error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/**
+ * POST /api/people/reevaluate-all-profiles
+ * Re-evaluates all people's profile pictures using AI quality scores
+ */
+router.post('/reevaluate-all-profiles', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const people = await all('SELECT id, name FROM people');
+        
+        res.status(202).json({ message: "Re-evaluation started", total: people.length });
+
+        (async () => {
+            currentProgress = { active: true, current: 0, total: people.length, status: 'Analysiere Bildqualität...', startTime: new Date() };
+            
+            let updated = 0;
+
+            for (const person of people) {
+                try {
+                    const faces = await all('SELECT id, photo_data, quality FROM immich_faces WHERE person_id = ?', [person.id]);
+                    if (faces.length === 0) {
+                        currentProgress.current++;
+                        continue;
+                    }
+
+                    let bestFace = null;
+                    let maxQuality = -1;
+
+                    for (const face of faces) {
+                        let quality = face.quality;
+                        if (quality === null) {
+                            const aiData = await processImage(face.photo_data);
+                            if (aiData) {
+                                quality = aiData.quality || 0;
+                                await run('UPDATE immich_faces SET quality = ?, quality_details = ? WHERE id = ?', 
+                                    [quality, JSON.stringify(aiData.qualityDetails), face.id]);
+                            }
+                        }
+                        if (quality > maxQuality) {
+                            maxQuality = quality;
+                            bestFace = face;
+                        }
+                    }
+
+                    if (bestFace && maxQuality > 0.5) {
+                        const aiData = await processImage(bestFace.photo_data);
+                        if (aiData) {
+                            const insertResult = await run(
+                                'INSERT INTO person_photos (person_id, photo_data, mime_type, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
+                                [person.id, bestFace.photo_data, 'image/webp', aiData.quality, JSON.stringify(aiData.qualityDetails)]
+                            );
+                            const photoId = insertResult.lastID;
+                            const ai_metadata = JSON.stringify({
+                                estimated_age: aiData.estimatedAge,
+                                estimated_gender: aiData.estimatedGender,
+                                confidence: aiData.confidence,
+                                quality: aiData.quality,
+                                quality_details: aiData.qualityDetails,
+                                bbox: aiData.bbox || null,
+                                width: aiData.width || 800,
+                                height: aiData.height || 800
+                            });
+                            await run('UPDATE people SET photo_url = ?, ai_metadata = ? WHERE id = ?', 
+                                [`/api/people/photo/${photoId}`, ai_metadata, person.id]);
+                            updated++;
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Error re-evaluating person ${person.id}:`, err);
+                }
+                currentProgress.current++;
+            }
+            
+            currentProgress.active = false;
+            currentProgress.status = `Re-Evaluation abgeschlossen: ${updated} Profile aktualisiert.`;
+        })();
+    } catch (err) {
+        console.error("Re-evaluation error:", err);
         res.status(500).json({ error: err.message });
     }
 });

@@ -142,6 +142,10 @@ async function initDB(retries = 5) {
         )`);
 
         await addColumnIfMissing('relationships', 'status', 'TEXT');
+        await addColumnIfMissing('immich_faces', 'quality', 'DOUBLE PRECISION');
+        await addColumnIfMissing('immich_faces', 'quality_details', 'TEXT');
+        await addColumnIfMissing('person_photos', 'quality', 'DOUBLE PRECISION');
+        await addColumnIfMissing('person_photos', 'quality_details', 'TEXT');
 
         console.log("Database initialized successfully.");
         return; // Success, exit loop

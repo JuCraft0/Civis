@@ -8,11 +8,41 @@ import UserForm from '../components/UserForm';
 import NetworkGraph from '../components/NetworkGraph';
 import ConfirmationModal from '../components/ConfirmationModal';
 import Toast from '../components/Toast';
-import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces, syncAllImmichPeople, deleteAllImmichFaces, deleteAllPeoplePhotos } from '../services/api';
+import { getPeople, createPerson, createUser, getUsers, updateUser, deleteUser, getGroups, createGroup, deleteGroup, updateGroup, reindexFaces, syncAllImmichPeople, deleteAllImmichFaces, deleteAllPeoplePhotos, reevaluateAllProfiles, getMaintenanceProgress } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import HUDSelect from '../components/HUDSelect';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import FaceScanner from '../components/FaceScanner';
+
+// Progress UI Component
+const ProgressOverlay = ({ progress }) => {
+    if (!progress.active && !progress.status.includes('abgeschlossen')) return null;
+    const percent = Math.round((progress.current / progress.total) * 100) || 0;
+    
+    return (
+        <div className={`mb-8 p-6 ${progress.active ? 'bg-blue-600/10 border-blue-500/30' : 'bg-green-600/10 border-green-500/30'} border rounded-2xl transition-all`}>
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                    {progress.active ? <Loader className="animate-spin text-blue-400" size={20} /> : <Scan className="text-green-400" size={20} />}
+                    <span className="text-sm font-bold uppercase tracking-wider">{progress.status}</span>
+                </div>
+                {progress.total > 0 && <span className="font-mono text-xs text-blue-400">{progress.current} / {progress.total}</span>}
+            </div>
+            {progress.active && (
+                <>
+                    <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden border border-white/5">
+                        <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: `${percent}%` }}
+                            className="h-full bg-gradient-to-r from-blue-600 to-cyan-500 shadow-[0_0_15px_rgba(37,99,235,0.5)]"
+                        />
+                    </div>
+                    <p className="mt-2 text-right font-mono text-[10px] text-gray-500 uppercase">{percent}% ABGESCHLOSSEN</p>
+                </>
+            )}
+        </div>
+    );
+};
 
 // Nested Group Item Component
 const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
@@ -218,9 +248,27 @@ const Dashboard = () => {
         if (activeTab === 'people' || activeTab === 'network') fetchPeople();
     }, [activeTab, user]);
 
+    const [maintenanceProgress, setMaintenanceProgress] = useState({ active: false, current: 0, total: 0, status: '' });
+
     useEffect(() => {
-        fetchPeople();
-    }, []);
+        let interval;
+        if (maintenanceProgress.active) {
+            interval = setInterval(async () => {
+                try {
+                    const res = await getMaintenanceProgress();
+                    setMaintenanceProgress(res.data);
+                    if (!res.data.active) {
+                        clearInterval(interval);
+                        fetchPeople(); // Refresh data after maintenance
+                    }
+                } catch (err) {
+                    console.error("Progress fetch failed", err);
+                    clearInterval(interval);
+                }
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [maintenanceProgress.active]);
 
     const handleGroupSubmit = async (e) => {
         e.preventDefault();
@@ -263,6 +311,17 @@ const Dashboard = () => {
         }
     };
 
+    const handleReevaluateAll = async () => {
+        if (!window.confirm("Bist du sicher? Alle Profile werden auf Bildqualität geprüft und das jeweils beste Bild wird als Profilbild gesetzt.")) return;
+        try {
+            await reevaluateAllProfiles();
+            setMaintenanceProgress({ active: true, current: 0, total: 0, status: 'Initialisierung...' });
+            setToast({ message: "Re-Evaluierung gestartet", type: 'success' });
+        } catch (err) {
+            setToast({ message: "Fehler bei der Re-Evaluierung", type: 'error' });
+        }
+    };
+
     const handleReindex = async () => {
         if (!window.confirm("Möchten Sie wirklich alle Gesichter neu indexieren? Dies ist notwendig nach einem System-Upgrade und kann einige Zeit dauern.")) return;
         
@@ -287,20 +346,14 @@ const Dashboard = () => {
     const handleSyncAllImmich = async () => {
         if (!window.confirm("Möchten Sie wirklich die Immich-Synchronisierung für ALLE verknüpften Personen wiederholen? Dies kann bei vielen Personen lange dauern.")) return;
         
-        setReindexing(true);
-        setToast({ message: "Globale Immich-Synchronisierung gestartet...", type: "success" });
-        
         try {
-            const result = await syncAllImmichPeople();
-            setToast({ 
-                message: `Sync abgeschlossen! ${result.successful} erfolgreich, ${result.failed} fehlgeschlagen.`, 
-                type: "success" 
-            });
-            fetchPeople();
+            setReindexing(true);
+            await syncAllImmichPeople();
+            setMaintenanceProgress({ active: true, current: 0, total: 0, status: 'Initialisierung...' });
+            setToast({ message: "Globale Immich-Synchronisierung gestartet...", type: "success" });
         } catch (error) {
             console.error("Bulk sync error:", error);
             setToast({ message: "Fehler bei der globalen Synchronisierung", type: "error" });
-        } finally {
             setReindexing(false);
         }
     };
@@ -496,12 +549,14 @@ const Dashboard = () => {
                                 <Shield size={16} /> BENUTZER
                             </button>
                         )}
-                        <button
-                            onClick={() => setActiveTab('facescan')}
-                            className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'facescan' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                        >
-                            <Scan size={16} /> FACE SCAN
-                        </button>
+                        {user?.role === 'admin' && (
+                            <button
+                                onClick={() => setActiveTab('debug')}
+                                className={`px-6 py-2.5 rounded-xl font-bold text-sm tracking-widest transition-all flex items-center gap-2 ${activeTab === 'debug' ? 'bg-orange-600 text-white shadow-lg shadow-orange-500/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                            >
+                                <Database size={16} /> DEBUG
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -610,58 +665,6 @@ const Dashboard = () => {
                                 </div>
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={handleReindex}
-                                        disabled={reindexing}
-                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
-                                            reindexing 
-                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
-                                            : 'bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border-orange-500/20'
-                                        }`}
-                                        title="Alle Gesichter im System neu indexieren"
-                                    >
-                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <Database size={16} />}
-                                        {reindexing ? 'Verarbeite...' : 'Neu Indexieren'}
-                                    </button>
-                                    <button
-                                        onClick={handleSyncAllImmich}
-                                        disabled={reindexing}
-                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
-                                            reindexing 
-                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
-                                            : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border-blue-500/20'
-                                        }`}
-                                        title="Immich Sync für alle verknüpften Personen wiederholen"
-                                    >
-                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <Scan size={16} />}
-                                        {reindexing ? 'Syncing...' : 'Immich Sync All'}
-                                    </button>
-                                    <button
-                                        onClick={handleDeleteAllImmichImages}
-                                        disabled={reindexing}
-                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
-                                            reindexing 
-                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
-                                            : 'bg-red-600/20 text-red-400 hover:bg-red-600/30 border-red-500/20'
-                                        }`}
-                                        title="Alle Immich-bezogenen Bilder und Metadaten löschen"
-                                    >
-                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                        {reindexing ? 'Lösche...' : 'Immich Clear'}
-                                    </button>
-                                    <button
-                                        onClick={handleDeleteAllPeoplePhotos}
-                                        disabled={reindexing}
-                                        className={`text-xs px-4 py-2 rounded-lg transition-all font-bold uppercase flex items-center gap-2 border ${
-                                            reindexing 
-                                            ? 'bg-gray-500/10 text-gray-500 border-gray-500/20 cursor-not-allowed' 
-                                            : 'bg-red-800/20 text-red-500 hover:bg-red-800/30 border-red-700/20'
-                                        }`}
-                                        title="ALLE Personen-Bilder (auch manuelle) löschen und Profilbilder zurücksetzen"
-                                    >
-                                        {reindexing ? <Loader size={16} className="animate-spin" /> : <UserX size={16} />}
-                                        {reindexing ? 'Lösche...' : 'Delete All Photos'}
-                                    </button>
-                                    <button
                                         onClick={() => {
                                             setUserFormState({ mode: 'create', data: null });
                                             setShowUserForm(true);
@@ -709,6 +712,82 @@ const Dashboard = () => {
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+                    )}
+
+                    {activeTab === 'debug' && (
+                        <div className="bg-[#121214] border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-visible backdrop-blur-xl">
+                            <div className="p-6 border-b border-white/10 mb-8 bg-white/[0.02]">
+                                <h2 className="text-xl font-black uppercase tracking-tight">System-Wartung & Debugging</h2>
+                                <p className="text-gray-500 text-xs font-mono">ERWEITERTE WERKZEUGE FÜR DATENBANK UND KI-SYNC</p>
+                            </div>
+
+                            <ProgressOverlay progress={maintenanceProgress} />
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-4">
+                                    <div className="flex items-center gap-3 text-orange-400">
+                                        <Database size={24} />
+                                        <h3 className="font-bold uppercase tracking-wider">Kern-System</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-400">Analysiert alle vorhandenen Daten und regeneriert den KI-Suchindex.</p>
+                                    <button
+                                        onClick={handleReindex}
+                                        disabled={reindexing || maintenanceProgress.active}
+                                        className="w-full py-3 bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 border border-orange-500/20 rounded-xl transition-all font-bold uppercase text-xs"
+                                    >
+                                        {reindexing ? 'Wird ausgeführt...' : 'Gesamtsystem Neu Indexieren'}
+                                    </button>
+                                </div>
+
+                                <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-4">
+                                    <div className="flex items-center gap-3 text-blue-400">
+                                        <Scan size={24} />
+                                        <h3 className="font-bold uppercase tracking-wider">Immich Sync</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-400">Synchronisiert alle verknüpften Personen erneut mit der Immich-API.</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={handleSyncAllImmich}
+                                            disabled={reindexing || maintenanceProgress.active}
+                                            className="flex-1 py-3 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 border border-blue-500/20 rounded-xl transition-all font-bold uppercase text-xs"
+                                        >
+                                            Sync All
+                                        </button>
+                                        <button
+                                            onClick={handleReevaluateAll}
+                                            disabled={reindexing || maintenanceProgress.active}
+                                            className="flex-1 py-3 bg-cyan-600/20 text-cyan-400 hover:bg-cyan-600/30 border border-cyan-500/20 rounded-xl transition-all font-bold uppercase text-xs"
+                                        >
+                                            Re-Evaluate All
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="p-6 bg-white/5 border border-white/10 rounded-2xl space-y-4">
+                                    <div className="flex items-center gap-3 text-red-400">
+                                        <Trash2 size={24} />
+                                        <h3 className="font-bold uppercase tracking-wider">Daten Bereinigen</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-400">Löscht Immich-Gesichter oder alle Personenbilder (Deep Reset).</p>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={handleDeleteAllImmichImages}
+                                            disabled={reindexing || maintenanceProgress.active}
+                                            className="flex-1 py-3 bg-red-600/20 text-red-400 hover:bg-red-600/30 border border-red-500/20 rounded-xl transition-all font-bold uppercase text-xs"
+                                        >
+                                            Immich Clear
+                                        </button>
+                                        <button
+                                            onClick={handleDeleteAllPeoplePhotos}
+                                            disabled={reindexing || maintenanceProgress.active}
+                                            className="flex-1 py-3 bg-red-900/20 text-red-500 hover:bg-red-900/30 border border-red-800/20 rounded-xl transition-all font-bold uppercase text-xs"
+                                        >
+                                            Reset All Photos
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
 

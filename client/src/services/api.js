@@ -27,6 +27,9 @@ api.interceptors.response.use(
     }
 );
 
+export const reevaluateAllProfiles = () => api.post('/people/reevaluate-all-profiles');
+export const getMaintenanceProgress = () => api.get('/people/maintenance-progress');
+
 export const getPeople = async () => {
     const response = await api.get('/people');
     return response.data;
