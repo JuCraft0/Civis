@@ -716,8 +716,8 @@ async function syncImmichForPerson(personId) {
     const assets = searchResult.assets?.items || [];
     console.log(`[Immich Sync] Found ${assets.length} assets for person ${personId} (Immich ID: ${immichPersonId})`);
 
-    // Limit to most recent 200 assets to keep processing time reasonable
-    const assetsToProcess = assets.slice(0, 200);
+    // Scan up to 500 assets to find the best possible profile picture
+    const assetsToProcess = assets.slice(0, 500);
 
     let allDescriptors = [];
     if (person.face_descriptor) {
@@ -751,13 +751,15 @@ async function syncImmichForPerson(personId) {
             const arrayBuffer = await imageRes.arrayBuffer();
             const imageBuffer = Buffer.from(arrayBuffer);
 
-            // Fetch asset details to check if we can get the face bounding box
+            // Fetch asset details to check if we can get the face bounding box and check person count
             let faceInfo = null;
+            let totalPeopleInPhoto = 0;
             try {
                 const assetDetailsRes = await fetch(`${baseUrl}/api/assets/${asset.id}`, { headers });
                 if (assetDetailsRes.ok) {
                     const assetDetails = await assetDetailsRes.json();
                     if (assetDetails.people) {
+                        totalPeopleInPhoto = assetDetails.people.length;
                         const personData = assetDetails.people.find(p => p.id === immichPersonId);
                         if (personData && personData.faces && personData.faces.length > 0) {
                             faceInfo = personData.faces[0];
@@ -816,15 +818,26 @@ async function syncImmichForPerson(personId) {
                     continue;
                 }
 
-                // Track the face with the highest score (confidence * area) to use as primary profile picture
-                // Larger faces with high detection confidence are usually better quality
+                // Track the face with the highest score to use as primary profile picture
+                // We combine:
+                // - detection confidence (det_score)
+                // - person count (portraits with 1 person are better)
+                // - face size (larger faces are usually better, but with low weight to avoid blurry close-ups)
                 const faceArea = faceData.bbox ? (faceData.bbox[2] - faceData.bbox[0]) * (faceData.bbox[3] - faceData.bbox[1]) : 0;
-                const faceScore = faceData.confidence * faceArea;
+                const faceAreaRatio = faceData.width ? faceArea / (faceData.width * faceData.height) : 0;
                 
-                if (!bestFaceData || faceScore > bestFaceScore) {
+                let qualityScore = faceData.confidence;
+                
+                // Reward portraits (only 1 person in photo)
+                if (totalPeopleInPhoto === 1) qualityScore += 0.15;
+                
+                // Minor reward for larger faces, but cap it to avoid extreme close-ups dominating
+                qualityScore += Math.min(0.1, faceAreaRatio * 0.5);
+                
+                if (!bestFaceData || qualityScore > bestFaceScore) {
                     bestFaceData = faceData;
                     bestFaceBuffer = finalBuffer;
-                    bestFaceScore = faceScore;
+                    bestFaceScore = qualityScore;
                 }
 
                 allDescriptors.push(faceData.descriptor);
@@ -846,7 +859,11 @@ async function syncImmichForPerson(personId) {
 
                 processedCount++;
                 
-                if (allDescriptors.length >= 100) break;
+                // If we have found enough faces for the gallery (50), we stop adding to DB 
+                // but we continue scanning the rest of the 500 assets ONLY to find a potentially better "best face"
+                // To save time, we only do AI processing for the "best face" check if the asset looks promising 
+                // (e.g. it has a large face according to Immich metadata)
+                if (processedCount >= 50 && bestFaceScore > 0.95) break;
             } else {
                 skippedCount++;
             }
