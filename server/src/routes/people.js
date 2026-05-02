@@ -697,13 +697,23 @@ async function syncImmichForPerson(personId) {
 
     const headers = { 'x-api-key': apiKey, 'Accept': 'application/json' };
 
-    // Fetch assets for this person from Immich
-    const response = await fetch(`${baseUrl}/api/people/${immichPersonId}/assets`, { headers });
+    // Fetch assets for this person from Immich using search/metadata
+    const response = await fetch(`${baseUrl}/api/search/metadata`, { 
+        method: 'POST',
+        headers: { 
+            'x-api-key': apiKey, 
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ personIds: [immichPersonId] })
+    });
+
     if (!response.ok) {
         throw new Error(`Immich API error: ${response.status}`);
     }
 
-    const assets = await response.json();
+    const searchResult = await response.json();
+    const assets = searchResult.assets?.items || [];
     console.log(`[Immich Sync] Found ${assets.length} assets for person ${personId} (Immich ID: ${immichPersonId})`);
 
     // Limit to most recent 200 assets to keep processing time reasonable
