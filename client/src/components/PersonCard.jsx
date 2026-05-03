@@ -69,79 +69,89 @@ const PersonCard = ({ person }) => {
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            whileHover={{ y: -4, borderColor: 'rgba(59, 130, 246, 0.4)' }}
-            className="group relative bg-[#121214] border border-white/10 rounded-3xl p-4 md:p-6 shadow-xl transition-all overflow-hidden cursor-pointer"
+            whileHover={{ y: -8, transition: { duration: 0.4 } }}
+            className="group glass-card rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden cursor-pointer border-white/5 hover:border-blue-500/30"
             onClick={() => navigate(`/person/${person.id}`, { state: { activeTab: 'people' } })}
         >
-            {/* Photo Background/Overlay */}
-            {person.photo_url && (
-                <div className="absolute inset-0 opacity-20 md:opacity-10 md:group-hover:opacity-20 transition-opacity">
-                    <AuthenticatedImage
-                        src={person.photo_url}
-                        alt=""
-                        className="w-full h-full object-cover filter grayscale blur-sm"
-                        style={faceStyle}
-                    />
-                </div>
-            )}
-            {/* Corner Accent */}
-            <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-blue-500/20 rounded-tr-3xl transition-colors group-hover:border-blue-500/40"></div>
-
-            <div className="relative z-10 flex flex-col h-full">
-                <div className="flex gap-4">
-                    <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/10 group-hover:border-blue-500/30 transition-colors shadow-lg bg-white/5">
-                        {person.photo_url ? (
-                            <AuthenticatedImage
-                                src={person.photo_url}
-                                alt={person.name}
-                                className="w-full h-full object-cover"
-                                style={faceStyle}
-                            />
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center text-gray-700">
-                                <User size={32} />
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <div className="text-[10px] font-mono text-blue-500/60 uppercase tracking-widest mb-1 flex items-center gap-2">
-                            <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse"></div>
-                            Einträge
+            {/* Background Neural Network Pattern (Simulated) */}
+            <div className="absolute top-0 right-0 p-12 bg-blue-500/5 rounded-full -mr-12 -mt-12 blur-3xl group-hover:bg-blue-500/10 transition-colors" />
+            
+            <div className="relative z-10 flex flex-col h-full space-y-6">
+                {/* Header: Photo & Primary Info */}
+                <div className="flex items-start gap-6">
+                    <div className="relative shrink-0">
+                        <div className="w-24 h-24 rounded-3xl overflow-hidden border-2 border-white/10 group-hover:border-blue-500/50 transition-all duration-500 shadow-2xl bg-slate-900/50 relative">
+                            {person.photo_url ? (
+                                <AuthenticatedImage
+                                    src={person.photo_url}
+                                    alt={person.name}
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                                    style={faceStyle}
+                                />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center text-slate-700">
+                                    <User size={40} />
+                                </div>
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
-                        <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors">
+                        
+                        {/* Biometric Status Indicator */}
+                        <div className="absolute -bottom-2 -right-2 bg-slate-900 p-1 rounded-full border border-white/10">
+                            <div className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-pulse" />
+                        </div>
+                    </div>
+
+                    <div className="flex-1 min-w-0 pt-2">
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="h-[1px] w-4 bg-blue-500/50" />
+                            <span className="text-[9px] font-black text-blue-500/60 uppercase tracking-[0.3em] font-mono">Neural ID: {person.id.toString().padStart(4, '0')}</span>
+                        </div>
+                        <h3 className="text-2xl font-black text-white leading-tight uppercase tracking-tighter group-hover:text-blue-400 transition-colors truncate font-outfit">
                             {person.name}
                         </h3>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="p-3 bg-black/20 rounded-xl border border-white/5">
-                        <div className="text-[9px] font-mono text-gray-600 uppercase mb-1">Alter</div>
-                        <div className="text-lg font-black text-gray-200">{person.age || '--'} <span className="text-[10px] font-normal text-gray-500">Jahre</span></div>
-                    </div>
-                    <div className="p-3 bg-black/20 rounded-xl border border-white/5">
-                        <div className="text-[9px] font-mono text-gray-600 uppercase mb-1">Verknüpfungen</div>
-                        <div className="text-lg font-black text-gray-200">
-                            {person.relationship_count || 0}
+                        <div className="flex items-center gap-2 mt-2">
+                            <div className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${person.gender === 'male' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' : 'bg-pink-500/10 text-pink-400 border-pink-500/20'}`}>
+                                {person.gender || 'Unknown'}
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-auto flex items-center justify-between">
-                    <div className="px-3 py-1.5 bg-blue-500/10 rounded-lg border border-blue-500/20">
-                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-tighter truncate max-w-[120px] block" title={person.group_path ? person.group_path.join(' > ') : (person.group_name || '[Keine Gruppe]')}>
-                            {person.group_path ? person.group_path.join(' > ') : (person.group_name || '[Keine Gruppe]')}
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/5 group-hover:bg-white/[0.04] group-hover:border-white/10 transition-all flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-slate-500">
+                            <Calendar size={12} />
+                            <span className="text-[9px] font-black uppercase tracking-widest font-mono">Bio Age</span>
+                        </div>
+                        <div className="text-xl font-black text-slate-100 font-outfit">{person.age || '--'} <span className="text-[10px] text-slate-500 font-medium">L-CYCLE</span></div>
+                    </div>
+                    
+                    <div className="p-4 bg-white/[0.02] rounded-2xl border border-white/5 group-hover:bg-white/[0.04] group-hover:border-white/10 transition-all flex flex-col gap-1">
+                        <div className="flex items-center gap-2 text-slate-500">
+                            <Users size={12} />
+                            <span className="text-[9px] font-black uppercase tracking-widest font-mono">Synapses</span>
+                        </div>
+                        <div className="text-xl font-black text-slate-100 font-outfit">{person.relationship_count || 0} <span className="text-[10px] text-slate-500 font-medium">NODES</span></div>
+                    </div>
+                </div>
+
+                {/* Footer: Group & Action */}
+                <div className="pt-2 flex items-center justify-between">
+                    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-600/5 rounded-xl border border-blue-500/10 group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all min-w-0">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] truncate font-mono">
+                            {person.group_path ? person.group_path[person.group_path.length - 1] : (person.group_name || 'UNASSIGNED')}
                         </span>
                     </div>
-                    <motion.div
-                        whileHover={{ x: 4 }}
-                        className="text-blue-500 md:text-blue-500/40 md:group-hover:text-blue-500 transition-colors"
-                    >
+                    
+                    <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 group-hover:text-white group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all shrink-0">
                         <ArrowRight size={20} />
-                    </motion.div>
+                    </div>
                 </div>
             </div>
         </motion.div>

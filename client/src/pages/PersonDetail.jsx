@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe, Brain, RefreshCw } from 'lucide-react';
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
-import Toast from '../components/Toast';
+import { toast } from 'react-hot-toast';
 import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces, setPrimaryPhoto, resetProfilePhoto } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
@@ -53,14 +53,22 @@ const ImmichFacesModule = ({ personId, faces, onSetPrimary }) => {
     if (!faces || faces.length === 0) return null;
 
     return (
-        <div className="space-y-4">
-            <button 
-                onClick={() => setIsCollapsed(!isCollapsed)} 
-                className="w-full text-left flex justify-between items-center text-xs font-mono uppercase text-gray-500 hover:text-white transition-colors"
-            >
-                <span>{faces.length} {faces.length === 1 ? 'Gesicht' : 'Gesichter'} erkannt</span>
-                <span>{isCollapsed ? '[ Anzeigen ]' : '[ Verbergen ]'}</span>
-            </button>
+        <div className="space-y-8">
+            <div className="flex justify-between items-center px-2">
+                <div className="flex items-center gap-4">
+                    <div className="w-1.5 h-8 bg-blue-500/40 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" />
+                    <div>
+                        <span className="text-[10px] font-mono font-black uppercase tracking-[0.3em] text-slate-500 block">Biometrische Datenbank</span>
+                        <span className="text-xl font-black uppercase tracking-tighter text-white">Evidence Collection ({faces.length})</span>
+                    </div>
+                </div>
+                <button 
+                    onClick={() => setIsCollapsed(!isCollapsed)} 
+                    className="glass-button px-5 py-2 text-[10px] font-mono font-black uppercase tracking-widest"
+                >
+                    {isCollapsed ? '[ Expand ]' : '[ Collapse ]'}
+                </button>
+            </div>
             
             <AnimatePresence>
                 {!isCollapsed && (
@@ -70,21 +78,28 @@ const ImmichFacesModule = ({ personId, faces, onSetPrimary }) => {
                         exit={{ height: 0, opacity: 0 }}
                         className="overflow-hidden"
                     >
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
                             {faces.map((assetId, idx) => (
-                                <div key={assetId} className="aspect-square rounded-xl overflow-hidden border border-white/10 relative group">
+                                <motion.div 
+                                    key={assetId}
+                                    whileHover={{ y: -4, scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="aspect-square rounded-2xl overflow-hidden border border-white/5 relative group cursor-pointer shadow-2xl shadow-black/60 bg-black/40"
+                                    onClick={() => onSetPrimary(assetId)}
+                                >
                                     <AuthenticatedImage
                                         src={`/api/people/${personId}/immich-face/${assetId}`}
                                         alt={`Face ${idx + 1}`}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        className="w-full h-full object-cover grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500"
                                     />
-                                    <button 
-                                        onClick={() => onSetPrimary(assetId)}
-                                        className="absolute inset-0 bg-blue-600/80 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-[8px] font-bold uppercase text-white p-1 text-center"
-                                    >
-                                        Als Profilbild
-                                    </button>
-                                </div>
+                                    <div className="absolute inset-0 bg-blue-600/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-all duration-300 backdrop-blur-[2px]">
+                                        <Plus size={20} className="text-white mb-2" />
+                                        <div className="text-[8px] font-black uppercase text-white tracking-widest text-center px-2">Set Primary</div>
+                                    </div>
+                                    <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-black/60 rounded-md border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-[8px] font-mono text-gray-400">#{(idx+1).toString().padStart(3, '0')}</span>
+                                    </div>
+                                </motion.div>
                             ))}
                         </div>
                     </motion.div>
@@ -104,16 +119,15 @@ const PersonDetail = () => {
 
     const getBackButtonText = () => {
         switch (activeTab) {
-            case 'groups': return 'Zurück zu Gruppen';
-            case 'network': return 'Zurück zum Netzwerk';
-            case 'facescan': return 'Zurück zum Face Scan';
-            default: return 'Zurück zur Übersicht';
+            case 'groups': return 'BACK TO GROUPS';
+            case 'network': return 'BACK TO NETWORK';
+            case 'facescan': return 'BACK TO SCANNER';
+            default: return 'BACK TO DATABASE';
         }
     };
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [toast, setToast] = useState({ message: '', type: 'success' });
     const [focusedModule, setFocusedModule] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
     const [immichFaces, setImmichFaces] = useState([]);
@@ -162,7 +176,7 @@ const PersonDetail = () => {
                 fetchData();
             }
         } catch (error) {
-            setToast({ message: 'Fehler beim Speichern', type: 'error' });
+            toast.error('Fehler beim Speichern');
         }
     };
 
@@ -179,13 +193,13 @@ const PersonDetail = () => {
         if (!person?.immich_person_id) return;
         try {
             setIsSyncing(true);
-            setToast({ message: 'Synchronisation gestartet...', type: 'info' });
+            toast.success('Synchronisation gestartet...');
             const response = await syncImmichPerson(id);
-            setToast({ message: `Erfolgreich synchronisiert: ${response.descriptorsAdded} Gesichter hinzugefügt`, type: 'success' });
+            toast.success(`Erfolgreich synchronisiert: ${response.descriptorsAdded} Gesichter hinzugefügt`);
             fetchData();
         } catch (error) {
             console.error("Immich sync failed", error);
-            setToast({ message: 'Synchronisation fehlgeschlagen', type: 'error' });
+            toast.error('Synchronisation fehlgeschlagen');
         } finally {
             setIsSyncing(false);
         }
@@ -195,43 +209,54 @@ const PersonDetail = () => {
         if (!window.confirm("Möchtest du das Profilbild wirklich zurücksetzen?")) return;
         try {
             await resetProfilePhoto(id);
-            setToast({ message: 'Profilbild zurückgesetzt', type: 'success' });
+            toast.success('Profilbild zurückgesetzt');
             fetchData();
         } catch (error) {
-            setToast({ message: 'Fehler beim Zurücksetzen', type: 'error' });
+            toast.error('Fehler beim Zurücksetzen');
         }
     };
 
     const handleSetPrimaryPhoto = async (assetId) => {
         try {
-            setToast({ message: 'Aktualisiere Profilbild...', type: 'info' });
+            toast.success('Aktualisiere Profilbild...');
             await setPrimaryPhoto(id, { assetId, source: 'immich' });
-            setToast({ message: 'Profilbild erfolgreich aktualisiert', type: 'success' });
+            toast.success('Profilbild erfolgreich aktualisiert');
             fetchData();
         } catch (error) {
             console.error("Set primary photo failed", error);
-            setToast({ message: 'Fehler beim Aktualisieren des Profilbilds', type: 'error' });
+            toast.error('Fehler beim Aktualisieren des Profilbilds');
         }
     };
 
     if (loading) return (
-        <div className="min-h-screen bg-[#0a0a0c] flex flex-col items-center justify-center gap-4">
-            <Loader className="animate-spin text-blue-500" size={48} />
-            <span className="text-gray-500 font-mono animate-pulse uppercase text-xs">Daten werden geladen...</span>
+        <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center gap-6">
+            <div className="relative">
+                <Loader className="animate-spin text-blue-500" size={64} strokeWidth={1} />
+                <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full animate-pulse" />
+            </div>
+            <span className="text-blue-500/50 font-mono animate-pulse uppercase text-[10px] tracking-[0.5em] font-black">Decrypting Identity...</span>
         </div>
     );
 
     if (!person) return (
-        <div className="min-h-screen bg-[#0a0a0c] flex flex-col items-center justify-center text-white p-8 text-center">
-            <h2 className="text-2xl font-black uppercase tracking-tighter mb-4">Eintrag nicht gefunden</h2>
-            <button onClick={() => navigate('/', { state: { activeTab } })} className="bg-blue-600/10 text-blue-400 hover:bg-blue-600/20 border border-blue-500/20 px-6 py-3 rounded-xl transition-all font-bold uppercase text-xs">Zurück</button>
+        <div className="min-h-screen bg-obsidian flex flex-col items-center justify-center text-white p-8 text-center">
+            <div className="w-24 h-24 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 mb-8">
+                <Info size={40} />
+            </div>
+            <h2 className="text-4xl font-black uppercase tracking-tighter mb-8">Subject Not Found</h2>
+            <button 
+                onClick={() => navigate('/', { state: { activeTab } })} 
+                className="glass-button px-10 py-4 font-black uppercase text-xs tracking-widest"
+            >
+                Return to Database
+            </button>
         </div>
     );
 
     const modules = [
         {
             id: 'photo',
-            label: 'Fotogalerie',
+            label: 'Ident-Focus',
             icon: ImageIcon,
             color: 'blue',
             fullWidth: true,
@@ -241,36 +266,56 @@ const PersonDetail = () => {
                 const activeUrls = urls.filter(u => u);
 
                 return (
-                    <div className="space-y-6">
-                        <div className="flex justify-center">
-                            <div className="w-64 h-64 rounded-3xl overflow-hidden border-2 border-white/10 shadow-2xl relative group/photo">
-                                {activeUrls[0] ? (
-                                    <AuthenticatedImage
-                                        src={activeUrls[0]}
-                                        alt={p.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                ) : (
-                                    <div className="w-full h-full bg-white/5 flex items-center justify-center text-gray-700">
-                                        <ImageIcon size={48} />
+                    <div className="space-y-10">
+                        <div className="flex justify-center relative">
+                            <div className="relative group/photo">
+                                {/* Scanner Frame */}
+                                <div className="absolute -inset-4 border border-blue-500/20 rounded-[2.5rem] pointer-events-none group-hover/photo:border-blue-500/40 transition-colors" />
+                                <div className="absolute -top-4 -left-4 w-12 h-12 border-t-2 border-l-2 border-blue-500 rounded-tl-2xl" />
+                                <div className="absolute -top-4 -right-4 w-12 h-12 border-t-2 border-r-2 border-blue-500 rounded-tr-2xl" />
+                                <div className="absolute -bottom-4 -left-4 w-12 h-12 border-b-2 border-l-2 border-blue-500 rounded-bl-2xl" />
+                                <div className="absolute -bottom-4 -right-4 w-12 h-12 border-b-2 border-r-2 border-blue-500 rounded-br-2xl" />
+
+                                <div className="w-72 h-72 rounded-[2rem] overflow-hidden border-2 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.8)] relative">
+                                    {activeUrls[0] ? (
+                                        <AuthenticatedImage
+                                            src={activeUrls[0]}
+                                            alt={p.name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-white/5 flex items-center justify-center text-slate-700">
+                                            <ImageIcon size={64} strokeWidth={1} />
+                                        </div>
+                                    )}
+                                    
+                                    {/* Scanline Effect */}
+                                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-500/10 to-transparent h-20 w-full animate-scanline pointer-events-none" />
+                                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none" />
+                                    
+                                    <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover/photo:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                                        <span className="text-[10px] font-mono font-black uppercase text-white tracking-[0.4em] bg-blue-600 px-4 py-2 rounded-lg shadow-xl">
+                                            Confirmed Identity
+                                        </span>
                                     </div>
-                                )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-100 md:opacity-0 md:group-hover/photo:opacity-100 transition-opacity flex items-end justify-center pb-4">
-                                    <span className="text-[10px] font-mono uppercase text-blue-400">Primäre Identifikation</span>
                                 </div>
                             </div>
                         </div>
 
                         {activeUrls.length > 1 && (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8 pt-6 border-t border-white/5">
+                            <div className="flex flex-wrap justify-center gap-4 mt-8 pt-10 border-t border-white/5">
                                 {activeUrls.slice(1).map((url, idx) => (
-                                    <div key={`gallery-${idx}`} className="aspect-square rounded-2xl overflow-hidden border border-blue-500/30 md:border-white/10 md:hover:border-blue-500/30 transition-all group/tile">
+                                    <motion.div 
+                                        key={`gallery-${idx}`}
+                                        whileHover={{ y: -4, scale: 1.05 }}
+                                        className="w-20 h-20 rounded-2xl overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all group/tile bg-black/40 shadow-xl"
+                                    >
                                         <AuthenticatedImage
                                             src={url}
-                                            alt={`${p.name} detail ${idx + 2}`}
-                                            className="w-full h-full object-cover group-hover/tile:scale-110 transition-transform duration-500"
+                                            alt={`${p.name} alternate ${idx + 1}`}
+                                            className="w-full h-full object-cover grayscale opacity-50 group-hover/tile:grayscale-0 group-hover/tile:opacity-100 transition-all duration-500"
                                         />
-                                    </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         )}
@@ -280,7 +325,7 @@ const PersonDetail = () => {
         },
         {
             id: 'age',
-            label: 'Alter & Geburt',
+            label: 'Bio-Metrics / Age',
             icon: Calendar,
             color: 'blue',
             isActive: (p) => {
@@ -303,13 +348,16 @@ const PersonDetail = () => {
 
                 return (
                     <div className="flex flex-col">
-                        <div className="text-4xl font-black text-white flex items-baseline gap-2">
-                            {displayAge} <span className="text-xs font-mono font-normal text-gray-600 uppercase">Jahre</span>
-                            {isApprox && <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] rounded-md font-mono border border-yellow-500/30">APPROX.</span>}
+                        <div className="text-5xl font-black text-white flex items-baseline gap-3 tracking-tighter">
+                            {displayAge} <span className="text-[10px] font-mono font-black text-slate-500 uppercase tracking-widest">Standard Years</span>
+                            {isApprox && (
+                                <div className="px-2 py-0.5 bg-blue-500/10 text-blue-400 text-[8px] rounded-md font-mono border border-blue-500/20 tracking-tighter uppercase font-black">AI Estimated</div>
+                            )}
                         </div>
                         {p.birth_date && (
-                            <div className="text-[10px] font-mono text-gray-500 mt-1 uppercase tracking-wider">
-                                Geboren: {new Date(p.birth_date).toLocaleDateString('de-DE')}
+                            <div className="text-[10px] font-mono text-slate-500 mt-2 uppercase tracking-[0.2em] flex items-center gap-2">
+                                <div className="w-1 h-1 rounded-full bg-blue-500" />
+                                Recorded: {new Date(p.birth_date).toLocaleDateString('de-DE')}
                             </div>
                         )}
                     </div>
@@ -318,19 +366,21 @@ const PersonDetail = () => {
         },
         {
             id: 'group',
-            label: 'Gruppe',
+            label: 'Affiliation / Group',
             icon: Users,
             color: 'orange',
             isActive: (p) => p.group_id || p.group_name,
             render: (p) => (
-                <div className="text-xl font-black text-white uppercase tracking-tight">
-                    {p.group_path ? p.group_path.join(' > ') : (p.group_name || '[Keine Gruppe]')}
+                <div className="flex items-center gap-4">
+                    <div className="text-2xl font-black text-white uppercase tracking-tighter">
+                        {p.group_path ? p.group_path.join(' / ') : (p.group_name || '[Unassigned]')}
+                    </div>
                 </div>
             )
         },
         {
             id: 'gender',
-            label: 'Geschlecht',
+            label: 'Bio-Type / Gender',
             icon: Users,
             color: 'purple',
             isActive: (p) => {
@@ -352,43 +402,45 @@ const PersonDetail = () => {
                 }
 
                 return (
-                    <div className="flex items-center gap-3">
-                        <div className="text-xl font-black text-white uppercase tracking-tight">
+                    <div className="flex items-center gap-4">
+                        <div className="text-2xl font-black text-white uppercase tracking-tighter">
                             {displayGender}
                         </div>
-                        {isApprox && <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] rounded-md font-mono border border-yellow-500/30">APPROX.</span>}
+                        {isApprox && (
+                             <div className="px-2 py-0.5 bg-purple-500/10 text-purple-400 text-[8px] rounded-md font-mono border border-purple-500/20 tracking-tighter uppercase font-black">Pattern Found</div>
+                        )}
                     </div>
                 );
             }
         },
         {
             id: 'aliases',
-            label: 'Alias (Spitznamen)',
+            label: 'Codenames / Aliases',
             icon: Users,
             color: 'blue',
             fullWidth: true,
             isActive: (p) => p.aliases && p.aliases.trim().length > 0,
             render: (p) => (
-                <div className="text-xl font-black text-white uppercase tracking-tight">
+                <div className="text-2xl font-black text-blue-400 uppercase tracking-tighter">
                     {p.aliases}
                 </div>
             )
         },
         {
             id: 'location',
-            label: 'Wohnort',
-            icon: Users,
+            label: 'Sector / Residence',
+            icon: Globe,
             color: 'orange',
             isActive: (p) => p.location && p.location.trim().length > 0,
             render: (p) => (
-                <div className="text-xl font-black text-white uppercase tracking-tight">
+                <div className="text-2xl font-black text-white uppercase tracking-tighter">
                     {p.location}
                 </div>
             )
         },
         {
             id: 'family',
-            label: 'Familie',
+            label: 'Genetic Network / Family',
             icon: Users,
             color: 'green',
             fullWidth: true,
@@ -397,21 +449,31 @@ const PersonDetail = () => {
                 return (
                     <div className="flex flex-wrap gap-3">
                         {p.family.map((member, idx) => {
+                            const status = getGenderedStatus(member.status, member.gender);
                             if (member.id) {
                                 return (
-                                    <button key={`fam-${member.id}`} onClick={() => navigate(`/person/${member.id}`, { state: { activeTab } })} className="px-4 py-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 rounded-xl text-green-300 text-xs font-bold uppercase transition-all flex flex-col items-start gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
-                                            <span>{member.name}</span>
+                                    <motion.button 
+                                        key={`fam-${member.id}`} 
+                                        whileHover={{ scale: 1.05, x: 5 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => navigate(`/person/${member.id}`, { state: { activeTab } })} 
+                                        className="px-6 py-3 bg-green-500/5 hover:bg-green-500/10 border border-green-500/20 rounded-2xl text-green-300 transition-all flex flex-col items-start gap-1 group/node"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] group-hover/node:scale-125 transition-transform" />
+                                            <span className="text-xs font-black uppercase tracking-widest">{member.name}</span>
                                         </div>
-                                        <span className="text-[10px] text-green-500/60 tracking-wider">als {getGenderedStatus(member.status, member.gender)}</span>
-                                    </button>
+                                        <span className="text-[9px] font-mono text-green-500/50 tracking-[0.2em] uppercase pl-5">{status}</span>
+                                    </motion.button>
                                 );
                             }
                             return (
-                                <div key={`fam-unlinked-${idx}`} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 text-xs font-mono uppercase flex flex-col items-start gap-1">
-                                    <span>{member.name}</span>
-                                    <span className="text-[10px] text-gray-500 tracking-wider">als {member.status}</span>
+                                <div key={`fam-unlinked-${idx}`} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-slate-500 flex flex-col items-start gap-1">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500/50" />
+                                        <span className="text-xs font-black uppercase tracking-widest opacity-60">{member.name}</span>
+                                    </div>
+                                    <span className="text-[9px] font-mono opacity-40 tracking-[0.2em] uppercase pl-4.5">{member.status}</span>
                                 </div>
                             );
                         })}
@@ -421,7 +483,7 @@ const PersonDetail = () => {
         },
         {
             id: 'partners',
-            label: 'Beziehungen',
+            label: 'Interpersonal Bonds / Partners',
             icon: Heart,
             color: 'red',
             fullWidth: true,
@@ -430,21 +492,31 @@ const PersonDetail = () => {
                 return (
                     <div className="flex flex-wrap gap-3">
                         {p.partners.map((member, idx) => {
+                            const status = getGenderedStatus(member.status, member.gender);
                             if (member.id) {
                                 return (
-                                    <button key={`part-${member.id}`} onClick={() => navigate(`/person/${member.id}`, { state: { activeTab } })} className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-xl text-red-300 text-xs font-bold uppercase transition-all flex flex-col items-start gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                                            <span>{member.name}</span>
+                                    <motion.button 
+                                        key={`part-${member.id}`} 
+                                        whileHover={{ scale: 1.05, x: 5 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => navigate(`/person/${member.id}`, { state: { activeTab } })} 
+                                        className="px-6 py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-2xl text-red-300 transition-all flex flex-col items-start gap-1 group/node"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] group-hover/node:scale-125 transition-transform" />
+                                            <span className="text-xs font-black uppercase tracking-widest">{member.name}</span>
                                         </div>
-                                        <span className="text-[10px] text-red-500/60 tracking-wider">als {getGenderedStatus(member.status, member.gender)}</span>
-                                    </button>
+                                        <span className="text-[9px] font-mono text-red-500/50 tracking-[0.2em] uppercase pl-5">{status}</span>
+                                    </motion.button>
                                 );
                             }
                             return (
-                                <div key={`part-unlinked-${idx}`} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 text-xs font-mono uppercase flex flex-col items-start gap-1">
-                                    <span>{member.name}</span>
-                                    <span className="text-[10px] text-gray-500 tracking-wider">als {member.status}</span>
+                                <div key={`part-unlinked-${idx}`} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-slate-500 flex flex-col items-start gap-1">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500/50" />
+                                        <span className="text-xs font-black uppercase tracking-widest opacity-60">{member.name}</span>
+                                    </div>
+                                    <span className="text-[9px] font-mono opacity-40 tracking-[0.2em] uppercase pl-4.5">{member.status}</span>
                                 </div>
                             );
                         })}
@@ -454,7 +526,7 @@ const PersonDetail = () => {
         },
         {
             id: 'social',
-            label: 'Soziales Umfeld',
+            label: 'Extended Network / Social',
             icon: Users,
             color: 'blue',
             fullWidth: true,
@@ -463,21 +535,31 @@ const PersonDetail = () => {
                 return (
                     <div className="flex flex-wrap gap-3">
                         {p.social.map((member, idx) => {
+                            const status = getGenderedStatus(member.status, member.gender);
                             if (member.id) {
                                 return (
-                                    <button key={`soc-${member.id}`} onClick={() => navigate(`/person/${member.id}`, { state: { activeTab } })} className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl text-blue-300 text-xs font-bold uppercase transition-all flex flex-col items-start gap-1">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                                            <span>{member.name}</span>
+                                    <motion.button 
+                                        key={`soc-${member.id}`} 
+                                        whileHover={{ scale: 1.05, x: 5 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => navigate(`/person/${member.id}`, { state: { activeTab } })} 
+                                        className="px-6 py-3 bg-blue-500/5 hover:bg-blue-500/10 border border-blue-500/20 rounded-2xl text-blue-300 transition-all flex flex-col items-start gap-1 group/node"
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)] group-hover/node:scale-125 transition-transform" />
+                                            <span className="text-xs font-black uppercase tracking-widest">{member.name}</span>
                                         </div>
-                                        <span className="text-[10px] text-blue-500/60 tracking-wider">als {getGenderedStatus(member.status, member.gender)}</span>
-                                    </button>
+                                        <span className="text-[9px] font-mono text-blue-500/50 tracking-[0.2em] uppercase pl-5">{status}</span>
+                                    </motion.button>
                                 );
                             }
                             return (
-                                <div key={`soc-unlinked-${idx}`} className="px-4 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-400 text-xs font-mono uppercase flex flex-col items-start gap-1">
-                                    <span>{member.name}</span>
-                                    <span className="text-[10px] text-gray-500 tracking-wider">als {member.status}</span>
+                                <div key={`soc-unlinked-${idx}`} className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-slate-500 flex flex-col items-start gap-1">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-500/50" />
+                                        <span className="text-xs font-black uppercase tracking-widest opacity-60">{member.name}</span>
+                                    </div>
+                                    <span className="text-[9px] font-mono opacity-40 tracking-[0.2em] uppercase pl-4.5">{member.status}</span>
                                 </div>
                             );
                         })}
@@ -487,7 +569,7 @@ const PersonDetail = () => {
         },
         {
             id: 'ai_analysis',
-            label: 'KI-Analyse',
+            label: 'Intelligence / AI Analysis',
             icon: Brain,
             color: 'purple',
             fullWidth: false,
@@ -501,24 +583,24 @@ const PersonDetail = () => {
             render: (p) => {
                 let ai = {};
                 try { ai = JSON.parse(p.ai_metadata); } catch { }
-                const raceMap = { white: 'Kaukasisch', black: 'Dunkelhäutig', asian: 'Asiatisch', 'middle eastern': 'Nahost', latino: 'Lateinamerikanisch', indian: 'Indisch' };
-                const emotionMap = { happy: '😊 Fröhlich', sad: '😢 Traurig', angry: '😠 Wütend', fear: '😨 Angst', surprise: '😲 Überraschung', neutral: '😐 Neutral', disgust: '🤢 Ekel' };
+                const raceMap = { white: 'Caucasoid', black: 'Negroid', asian: 'Mongoloid', 'middle eastern': 'Middle Eastern', latino: 'Hispanic', indian: 'Indic' };
+                const emotionMap = { happy: '😊 CALM / CONTENT', sad: '😢 DEPLETED', angry: '😠 AGITATED', fear: '😨 VULNERABLE', surprise: '😲 ANOMALY', neutral: '😐 BASELINE', disgust: '🤢 AVERSION' };
 
                 return (
-                    <div className="space-y-3">
+                    <div className="space-y-6">
                         {ai.race && (
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider mb-1">Abstammung (KI)</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-lg font-black text-white uppercase tracking-tight">{raceMap[ai.race?.toLowerCase()] || ai.race}</span>
-                                    <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-[10px] rounded-md font-mono border border-yellow-500/30">APPROX.</span>
+                                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] mb-2">Heritage Classification</span>
+                                <div className="flex items-center gap-3">
+                                    <span className="text-xl font-black text-white uppercase tracking-tight">{raceMap[ai.race?.toLowerCase()] || ai.race}</span>
+                                    <div className="px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[8px] rounded-md font-mono border border-yellow-500/20 font-black uppercase">Low Confidence</div>
                                 </div>
                             </div>
                         )}
                         {ai.emotion && (
                             <div className="flex flex-col">
-                                <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider mb-1">Emotion (KI)</span>
-                                <span className="text-lg font-black text-white">{emotionMap[ai.emotion?.toLowerCase()] || ai.emotion}</span>
+                                <span className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.3em] mb-2">Psych-State Signature</span>
+                                <span className="text-xl font-black text-white uppercase tracking-tighter">{emotionMap[ai.emotion?.toLowerCase()] || ai.emotion}</span>
                             </div>
                         )}
                     </div>
@@ -527,34 +609,37 @@ const PersonDetail = () => {
         },
         {
             id: 'additional_info',
-            label: 'Zusatzinfos',
+            label: 'Notes / Intelligence Brief',
             icon: Info,
             color: 'purple',
             fullWidth: true,
             isActive: (p) => p.additional_info && p.additional_info.trim().length > 0,
             render: (p) => (
-                <p className="text-gray-400 leading-relaxed font-mono text-sm whitespace-pre-wrap p-4 bg-black/20 rounded-xl border border-white/5">
-                    {p.additional_info}
-                </p>
+                <div className="relative">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/40 rounded-full" />
+                    <p className="text-slate-400 leading-relaxed font-mono text-xs whitespace-pre-wrap pl-6 py-2">
+                        {p.additional_info}
+                    </p>
+                </div>
             )
         },
         {
             id: 'online_profiles',
-            label: 'Online-Profile',
+            label: 'Digital Footprint / Profiles',
             icon: Globe,
             color: 'blue',
             fullWidth: true,
             isActive: (p) => p.online_profiles && p.online_profiles.length > 0,
             render: (p) => {
                 return (
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-4">
                         {p.online_profiles.map((profile, idx) => (
-                            <div key={`profile-${idx}`} className="px-4 py-2 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-300 text-xs font-bold uppercase transition-all flex flex-col items-start gap-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                                    <span>{profile.platform}</span>
+                            <div key={`profile-${idx}`} className="px-6 py-3 bg-blue-500/5 border border-blue-500/20 rounded-2xl text-blue-300 transition-all flex flex-col items-start gap-1 shadow-lg">
+                                <div className="flex items-center gap-3">
+                                    <Globe size={14} className="opacity-60" />
+                                    <span className="text-xs font-black uppercase tracking-widest">{profile.platform}</span>
                                 </div>
-                                <span className="text-[10px] text-blue-500/60 tracking-wider font-mono lowercase">{profile.username}</span>
+                                <span className="text-[10px] text-blue-500/60 tracking-[0.1em] font-mono lowercase pl-6">{profile.username}</span>
                             </div>
                         ))}
                     </div>
@@ -563,7 +648,7 @@ const PersonDetail = () => {
         },
         {
             id: 'immich_faces',
-            label: 'Immich Gesichter',
+            label: 'Immich Collection',
             icon: ImageIcon,
             color: 'cyan',
             fullWidth: true,
@@ -573,123 +658,241 @@ const PersonDetail = () => {
     ];
 
     const activeModules = modules.filter(m => m.isActive(person));
-    const inactiveModules = modules.filter(m => !m.isActive(person));
 
     return (
-        <div className="min-h-screen bg-[#0a0a0c] text-white p-4 md:p-8 selection:bg-blue-500/30">
-            <div className="max-w-4xl mx-auto space-y-8">
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="min-h-screen bg-obsidian text-white selection:bg-blue-500/30 p-4 md:p-12 relative overflow-hidden"
+        >
+            {/* Global Ambient Accents */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">
+                <div className="absolute top-[-20%] right-[-10%] w-[80%] h-[80%] bg-blue-600/5 blur-[200px] rounded-full" />
+                <div className="absolute bottom-[-20%] left-[-10%] w-[60%] h-[60%] bg-purple-600/5 blur-[180px] rounded-full" />
+            </div>
 
-                <motion.button onClick={() => navigate('/', { state: { activeTab } })} className="flex items-center gap-2 text-gray-500 hover:text-white transition-colors font-mono text-xs uppercase group">
-                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-                    {getBackButtonText()}
-                </motion.button>
-
-                <div className="bg-[#121214] border border-white/10 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-visible backdrop-blur-xl">
-                    <div className="absolute top-0 right-0 p-40 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
-                    <div className="absolute bottom-0 left-0 p-40 bg-purple-500/5 blur-[120px] rounded-full pointer-events-none" />
-
-                    {isEditing ? (
-                        <div className="relative z-10">
-                            <h2 className="text-3xl font-black uppercase tracking-tighter mb-8 border-b border-white/10 pb-4">Profil-Editor</h2>
-
-                            <PersonForm
-                                initialData={person}
-                                onSubmit={handleUpdate}
-                                onCancel={() => {
-                                    setIsEditing(false);
-                                    setFocusedModule(null);
-                                }}
-                                autoFocusField={focusedModule}
-                            />
+            <div className="max-w-[1500px] mx-auto relative z-10">
+                {/* Navigation Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
+                    <motion.button 
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        onClick={() => navigate('/', { state: { activeTab } })} 
+                        className="flex items-center gap-4 text-slate-500 hover:text-white transition-all font-mono text-[10px] uppercase tracking-[0.4em] group"
+                    >
+                        <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-blue-600/20 group-hover:text-blue-400 group-hover:border-blue-500/30 transition-all border border-white/10 shadow-2xl">
+                            <ArrowLeft size={18} />
                         </div>
-                    ) : (
-                        <div className="relative z-10 space-y-10">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border-l-4 border-blue-500 pl-6 py-2">
-                                <div>
-                                    <div className="text-[10px] font-mono text-blue-500/50 uppercase tracking-[0.3em] mb-1">Stammdatei</div>
-                                    <h1 className="text-3xl md:text-5xl font-black text-white tracking-tighter uppercase">{person.name}</h1>
-                                </div>
-                                <div className="flex gap-2">
-                                    {(user?.role === 'admin' || user?.role === 'editor') && person?.immich_person_id && (
-                                        <button
-                                            onClick={handleSyncImmich}
-                                            disabled={isSyncing}
-                                            className="bg-blue-600/10 text-blue-500 hover:bg-blue-600/20 px-3 py-2 rounded-xl border border-blue-500/20 transition-all flex items-center gap-2 font-mono text-[10px] font-bold uppercase"
-                                            title="Sync with Immich"
-                                        >
-                                            <RefreshCw size={14} className={isSyncing ? 'animate-spin' : ''} />
-                                            Sync
-                                        </button>
-                                    )}
-                                    {(user?.role === 'admin' || user?.role === 'editor') && person?.photo_url && (
-                                        <button
-                                            onClick={handleResetProfilePhoto}
-                                            className="bg-red-600/10 text-red-500 hover:bg-red-600/20 px-3 py-2 rounded-xl border border-red-500/20 transition-all flex items-center gap-2 font-mono text-[10px] font-bold uppercase"
-                                            title="Profilbild zurücksetzen"
-                                        >
-                                            <Trash2 size={14} />
-                                            Reset
-                                        </button>
-                                    )}
-                                    {(user?.role === 'admin' || user?.role === 'editor') && (
-                                        <button
-                                            onClick={() => setIsEditing(true)}
-                                            className="bg-white/5 text-white hover:bg-white/10 px-3 py-2 rounded-xl border border-white/10 transition-all flex items-center gap-2 font-mono text-[10px] font-bold uppercase"
-                                        >
-                                            <Edit3 size={14} />
-                                            Edit
-                                        </button>
-                                    )}
-                                    {user?.role === 'admin' && (
-                                        <button onClick={() => setShowDeleteModal(true)} className="p-4 bg-red-500/10 hover:bg-red-500/20 rounded-full text-red-500 border border-red-500/20 transition-all shadow-lg"><Trash2 size={20} /></button>
-                                    )}
-                                </div>
-                            </div>
+                        <span className="font-black">{getBackButtonText()}</span>
+                    </motion.button>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-wrap gap-4"
+                    >
+                        {(user?.role === 'admin' || user?.role === 'editor') && person?.immich_person_id && (
+                            <button
+                                onClick={handleSyncImmich}
+                                disabled={isSyncing}
+                                className="glass-button px-6 py-3 flex items-center gap-3 font-black text-[10px] uppercase tracking-widest group"
+                            >
+                                <RefreshCw size={14} className={`${isSyncing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'}`} />
+                                Sync Core
+                            </button>
+                        )}
+                        {(user?.role === 'admin' || user?.role === 'editor') && (
+                            <button
+                                onClick={() => setIsEditing(true)}
+                                className="glass-button px-6 py-3 flex items-center gap-3 font-black text-[10px] uppercase tracking-widest border-blue-500/20 text-blue-400 hover:text-white"
+                            >
+                                <Edit3 size={14} />
+                                Edit Profile
+                            </button>
+                        )}
+                        {user?.role === 'admin' && (
+                            <button 
+                                onClick={() => setShowDeleteModal(true)} 
+                                className="glass-button px-6 py-3 text-red-500 border-red-500/20 hover:bg-red-500/10 active:bg-red-500/20"
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        )}
+                    </motion.div>
+                </div>
+
+                {isEditing ? (
+                    <motion.div 
+                        initial={{ opacity: 0, scale: 0.98 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="max-w-4xl mx-auto"
+                    >
+                        <div className="flex items-center gap-6 mb-16">
+                            <div className="w-1.5 h-14 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.4)]" />
+                            <div>
+                                <h2 className="text-5xl font-black uppercase tracking-tighter text-white leading-none mb-2">Registry Access</h2>
+                                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em]">Amending Biological Record: {person.id.substring(0, 12)}</p>
+                            </div>
+                        </div>
+
+                        <PersonForm
+                            initialData={person}
+                            onSubmit={handleUpdate}
+                            onCancel={() => {
+                                setIsEditing(false);
+                                setFocusedModule(null);
+                            }}
+                            autoFocusField={focusedModule}
+                        />
+                    </motion.div>
+                ) : (
+                    <div className="space-y-12">
+                        {/* Dramatic Subject Header */}
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-12 pb-16 border-b border-white/5 relative">
+                            <div className="flex-1">
+                                <motion.div 
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className="flex items-center gap-4 mb-6"
+                                >
+                                    <div className="px-4 py-1.5 bg-blue-600/10 rounded-lg border border-blue-500/30 backdrop-blur-md">
+                                        <span className="text-[10px] font-mono font-black text-blue-400 uppercase tracking-[0.2em]">Subject ID: {person.id.substring(0, 12)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-lg border border-green-500/30">
+                                        <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-pulse" />
+                                        <span className="text-[9px] font-mono font-black text-green-500 uppercase tracking-widest">Authorized</span>
+                                    </div>
+                                </motion.div>
+                                <motion.h1 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 }}
+                                    className="text-6xl md:text-9xl font-black text-white tracking-tighter uppercase leading-[0.8] mb-6 drop-shadow-[0_0_30px_rgba(255,255,255,0.1)]"
+                                >
+                                    {person.name}
+                                </motion.h1>
+                                <motion.p 
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 0.5 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="text-slate-500 font-mono text-[10px] tracking-[0.5em] uppercase pl-1"
+                                >
+                                    Civis Intelligence Systems // Core Database // Entry verified
+                                </motion.p>
+                            </div>
+                        </div>
+
+                        {/* Intelligence Grid */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                            {/* Visual Asset Column */}
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.3 }}
+                                className="lg:col-span-4 space-y-8"
+                            >
+                                {activeModules.filter(m => m.id === 'photo').map(m => (
+                                    <div key={m.id} className="glass-panel p-8 rounded-[3rem] shadow-3xl">
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="w-10 h-10 rounded-xl bg-blue-600/20 flex items-center justify-center text-blue-400 border border-blue-500/30 shadow-lg">
+                                                <ImageIcon size={20} strokeWidth={1.5} />
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-slate-500 block">Primary Visual</span>
+                                                <span className="text-xs font-black uppercase text-white">{m.label}</span>
+                                            </div>
+                                        </div>
+                                        {m.render(person)}
+                                    </div>
+                                ))}
+
+                                {activeModules.filter(m => m.id === 'ai_analysis').map(m => (
+                                    <div key={m.id} className="glass-panel p-8 rounded-[3rem] shadow-3xl">
+                                        <div className="flex items-center gap-4 mb-8">
+                                            <div className="w-10 h-10 rounded-xl bg-purple-600/20 flex items-center justify-center text-purple-400 border border-purple-500/30 shadow-lg">
+                                                <Brain size={20} strokeWidth={1.5} />
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] font-mono font-black uppercase tracking-[0.2em] text-slate-500 block">Neural Engine</span>
+                                                <span className="text-xs font-black uppercase text-white">{m.label}</span>
+                                            </div>
+                                        </div>
+                                        {m.render(person)}
+                                    </div>
+                                ))}
+                            </motion.div>
+
+                            {/* Data Modules Column */}
+                            <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <AnimatePresence mode="popLayout">
-                                    {activeModules.map((module) => {
-                                        const getColorStyles = (color) => {
-                                            switch (color) {
-                                                case 'blue': return 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:border-blue-500/30';
-                                                case 'cyan': return 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 hover:border-cyan-500/30';
-                                                case 'orange': return 'bg-orange-500/10 text-orange-400 border-orange-500/20 hover:border-orange-500/30';
-                                                case 'green': return 'bg-green-500/10 text-green-400 border-green-500/20 hover:border-green-500/30';
-                                                case 'red': return 'bg-red-500/10 text-red-400 border-red-500/20 hover:border-red-500/30';
-                                                case 'purple': return 'bg-purple-500/10 text-purple-400 border-purple-500/20 hover:border-purple-500/30';
-                                                default: return 'bg-white/5 text-gray-400 border-white/10 hover:border-white/20';
-                                            }
-                                        };
-                                        const styles = getColorStyles(module.color);
+                                    {activeModules.filter(m => !['photo', 'ai_analysis', 'immich_faces'].includes(m.id)).map((module, index) => {
+                                        const styles = {
+                                            blue: 'bg-blue-600/10 text-blue-400 border-blue-500/20',
+                                            orange: 'bg-orange-600/10 text-orange-400 border-orange-500/20',
+                                            green: 'bg-green-600/10 text-green-400 border-green-500/20',
+                                            red: 'bg-red-600/10 text-red-400 border-red-500/20',
+                                            purple: 'bg-purple-600/10 text-purple-400 border-purple-500/20',
+                                            cyan: 'bg-cyan-600/10 text-cyan-400 border-cyan-500/20'
+                                        }[module.color] || 'bg-white/5 text-slate-400 border-white/10';
 
                                         return (
                                             <motion.div
                                                 key={module.id}
                                                 layout
-                                                initial={{ opacity: 0, scale: 0.9 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                                className={`${module.fullWidth ? 'col-span-full' : ''} bg-white/5 border border-white/10 rounded-3xl p-6 transition-colors group relative ${styles.split(' ').pop()}`}
+                                                initial={{ opacity: 0, y: 20 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: 0.1 * index + 0.4 }}
+                                                className={`${module.fullWidth ? 'col-span-full' : ''} glass-panel rounded-[2.5rem] p-10 hover:bg-white/[0.03] transition-colors group shadow-2xl relative overflow-hidden`}
                                             >
-                                                <div className="flex items-center gap-3 mb-4 text-gray-500">
-                                                    <div className={`p-2 rounded-2xl border ${styles.split(' ').slice(0, 3).join(' ')}`}>
-                                                        <module.icon size={18} />
+                                                {/* Corner Accent */}
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-white/[0.03] to-transparent pointer-events-none" />
+                                                
+                                                <div className="flex items-center gap-4 mb-8">
+                                                    <div className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all group-hover:scale-110 ${styles} shadow-lg`}>
+                                                        <module.icon size={20} strokeWidth={1.5} />
                                                     </div>
-                                                    <span className="text-[10px] font-mono uppercase tracking-[0.2em]">{module.label}</span>
+                                                    <span className="text-[10px] font-mono font-black uppercase tracking-[0.3em] text-slate-500">{module.label}</span>
                                                 </div>
-                                                {module.render(person)}
+                                                <div className="pl-1">
+                                                    {module.render(person)}
+                                                </div>
                                             </motion.div>
                                         );
                                     })}
                                 </AnimatePresence>
+
+                                {/* Immich Faces Full Width */}
+                                {activeModules.filter(m => m.id === 'immich_faces').map(m => (
+                                    <motion.div 
+                                        key={m.id} 
+                                        initial={{ opacity: 0, y: 30 }}
+                                        whileInView={{ opacity: 1, y: 0 }}
+                                        viewport={{ once: true }}
+                                        className="col-span-full mt-10"
+                                    >
+                                        <div className="glass-panel rounded-[3.5rem] p-12 md:p-16 shadow-3xl bg-slate-900/40 relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/5 blur-[100px] rounded-full" />
+                                            <div className="relative z-10">
+                                                {m.render(person)}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                <ConfirmationModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} onConfirm={handleDelete} title="Eintrag löschen" message={`Möchten Sie ${person.name} wirklich löschen?`} isDanger={true} />
-                <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
+                <ConfirmationModal 
+                    isOpen={showDeleteModal} 
+                    onClose={() => setShowDeleteModal(false)} 
+                    onConfirm={handleDelete} 
+                    title="Terminate Record" 
+                    message={`Are you certain you wish to purge all data associated with ${person.name}? This action is irreversible.`} 
+                    isDanger={true} 
+                />
             </div>
-        </div>
+        </motion.div>
     );
 };
 

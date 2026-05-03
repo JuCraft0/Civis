@@ -54,34 +54,35 @@ const HUDSelect = ({
 
     return (
         <div className="space-y-2" ref={containerRef}>
-            {label && <label className="text-[10px] font-mono text-gray-500 uppercase tracking-widest block mb-2">{label}</label>}
+            {label && <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-2 px-1">{label}</label>}
             <div className="relative">
                 <div
                     onClick={() => setIsOpen(!isOpen)}
                     className={`
-                        w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 
+                        w-full glass-panel rounded-2xl px-5 py-3.5 
                         text-white cursor-pointer transition-all flex items-center justify-between
-                        ${theme.border} ${isOpen ? 'ring-1 border-opacity-50' : ''} shadow-lg ${theme.glow}
+                        border border-white/5 hover:border-white/20
+                        ${isOpen ? 'ring-1 ring-white/10 border-white/30' : ''} shadow-2xl
                     `}
                 >
-                    <div className="flex items-center gap-3 min-w-0">
-                        {Icon && <Icon className="text-gray-500 shrink-0" size={18} />}
-                        <span className={`truncate font-mono text-xs uppercase ${selectedOption ? 'text-white' : 'text-gray-600'}`}>
+                    <div className="flex items-center gap-4 min-w-0">
+                        {Icon && <Icon className={`${selectedOption ? theme.activeText : 'text-gray-500'} shrink-0 transition-colors`} size={18} />}
+                        <span className={`truncate font-mono text-[11px] uppercase tracking-wider ${selectedOption ? 'text-white font-bold' : 'text-gray-500'}`}>
                             {selectedOption ? selectedOption.label : placeholder}
                         </span>
                     </div>
-                    {isOpen ? <ChevronUp size={16} className="text-gray-500" /> : <ChevronDown size={16} className="text-gray-500" />}
+                    <ChevronDown size={16} className={`text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
                 </div>
 
                 <AnimatePresence>
                     {isOpen && (
                         <motion.div
-                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                            className="absolute z-50 w-full mt-2 bg-[#121214] border border-white/10 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
+                            exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                            className="absolute z-[100] w-full mt-3 glass-panel rounded-2xl shadow-3xl overflow-hidden border border-white/10"
                         >
-                            <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                            <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5">
                                 {options.length > 0 ? options.map((opt) => (
                                     <div
                                         key={opt.value}
@@ -90,22 +91,23 @@ const HUDSelect = ({
                                             setIsOpen(false);
                                         }}
                                         className={`
-                                            w-full px-5 py-3.5 flex items-center gap-3 
-                                            cursor-pointer transition-all border-b border-white/5 last:border-0
+                                            w-full px-4 py-3 flex items-center gap-4 
+                                            cursor-pointer transition-all rounded-xl mb-1 last:mb-0
                                             ${theme.activeBg}
-                                            ${value === opt.value ? 'bg-white/5' : ''}
+                                            ${value === opt.value ? 'bg-white/10' : 'hover:bg-white/5'}
                                         `}
                                     >
-                                        <div className={`w-1.5 h-1.5 rounded-full ${value === opt.value ? (color === 'blue' ? 'bg-blue-500' : color === 'orange' ? 'bg-orange-500' : 'bg-purple-500') : 'bg-transparent'}`}></div>
+                                        <div className={`w-1.5 h-1.5 rounded-full transition-all ${value === opt.value ? (color === 'blue' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : color === 'orange' ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]') : 'bg-white/10'}`}></div>
                                         <span className={`
-                                            font-mono text-[10px] uppercase tracking-wider flex-1
-                                            ${value === opt.value ? theme.activeText + ' font-bold' : 'text-gray-400'}
+                                            font-mono text-[10px] uppercase tracking-[0.1em] flex-1
+                                            ${value === opt.value ? 'text-white font-black' : 'text-gray-400 group-hover:text-gray-200'}
                                         `}>
                                             {opt.label}
                                         </span>
+                                        {value === opt.value && <div className={`w-1 h-1 rounded-full ${color === 'blue' ? 'bg-blue-500' : color === 'orange' ? 'bg-orange-500' : 'bg-purple-500'}`} />}
                                     </div>
                                 )) : (
-                                    <div className="p-5 text-center text-gray-600 font-mono text-[10px] uppercase tracking-widest">
+                                    <div className="p-6 text-center text-gray-600 font-mono text-[10px] uppercase tracking-widest italic">
                                         Keine Optionen verfügbar
                                     </div>
                                 )}

@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle2, XCircle, Scan, Upload, Loader, User, Search, X, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, XCircle, Scan, Upload, Loader2, User, Search, X, AlertCircle, Fingerprint, ShieldCheck } from 'lucide-react';
 import { searchByFace, submitFeedback } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
@@ -47,7 +47,7 @@ const FaceScanner = () => {
             setQueryEmbedding(response.queryEmbedding || null);
             setQueryMetadata(response.queryMetadata || null);
         } catch (err) {
-            setError(err.response?.data?.error || "Fehler beim Gesichtsscan");
+            setError(err.response?.data?.error || "Biometrischer Scan fehlgeschlagen");
             console.error(err);
         } finally {
             setIsScanning(false);
@@ -55,20 +55,20 @@ const FaceScanner = () => {
     };
 
     const handleFeedback = async (e, personId, isCorrect) => {
-        e.stopPropagation(); // Don't navigate to person detail
+        e.stopPropagation();
         if (!queryEmbedding) return;
 
         try {
             await submitFeedback(personId, queryEmbedding, isCorrect);
             setFeedbackSent(prev => ({ ...prev, [personId]: true }));
             if (isCorrect) {
-                 toast.success('Gesicht verifiziert - System lernt...');
+                 toast.success('Biometrische Verifizierung erfolgreich');
             } else {
-                 toast('Feedback erhalten', { icon: 'ℹ️' });
+                 toast('Feedback erfasst', { icon: 'ℹ️' });
             }
         } catch (err) {
             console.error("Feedback error:", err);
-            toast.error("Feedback konnte nicht gesendet werden");
+            toast.error("Feedback-Übertragung fehlgeschlagen");
         }
     };
 
@@ -81,29 +81,39 @@ const FaceScanner = () => {
     };
 
     return (
-        <div className="bg-[#121214] border border-blue-500/20 rounded-3xl p-4 md:p-8 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-20 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
-
-            <div className="relative z-10 space-y-8">
-                <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400 border border-blue-500/20">
-                            <Scan size={24} />
+        <div className="glass-panel p-6 md:p-10 relative overflow-hidden">
+            {/* Background Decorative Element */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[100px] rounded-full pointer-events-none" />
+            
+            <div className="relative z-10 space-y-10">
+                {/* Header Area */}
+                <div className="flex items-center justify-between border-b border-white/5 pb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center text-blue-400 border border-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                            <Scan size={28} />
                         </div>
                         <div>
-                            <h2 className="text-xl font-black uppercase tracking-tighter">Biometrischer Scan</h2>
-                            <p className="text-[10px] font-mono text-gray-500 uppercase tracking-widest">Gesichtserkennung & Ähnlichkeitsabgleich</p>
+                            <h2 className="text-2xl font-black uppercase tracking-tighter font-outfit text-white">Biometrischer Scan</h2>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em] font-bold">Neural ID Verification System v4.0</p>
+                            </div>
                         </div>
                     </div>
                     {file && (
-                        <button onClick={reset} className="p-2 hover:bg-white/5 rounded-full text-gray-500 hover:text-white transition-colors">
-                            <X size={20} />
+                        <button 
+                            onClick={reset} 
+                            className="p-3 hover:bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all border border-transparent hover:border-white/10 group"
+                        >
+                            <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
                         </button>
                     )}
                 </div>
 
                 {!file ? (
-                    <div
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
                         onClick={() => fileInputRef.current.click()}
                         onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
                         onDrop={(e) => {
@@ -117,15 +127,23 @@ const FaceScanner = () => {
                                 setError(null);
                             }
                         }}
-                        className="border-2 border-dashed border-white/10 rounded-3xl p-6 md:p-12 flex flex-col items-center justify-center gap-4 cursor-pointer hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all group"
+                        className="border-2 border-dashed border-white/5 rounded-[2.5rem] p-12 md:p-24 flex flex-col items-center justify-center gap-6 cursor-pointer hover:border-blue-500/30 hover:bg-blue-500/[0.02] transition-all group relative overflow-hidden"
                     >
-                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-gray-500 group-hover:text-blue-400 group-hover:bg-blue-500/10 transition-all pointer-events-none">
-                            <Upload size={32} />
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        
+                        <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center text-slate-500 group-hover:text-blue-400 group-hover:bg-blue-500/10 group-hover:scale-110 transition-all border border-white/5 group-hover:border-blue-500/30 z-10">
+                            <Upload size={48} />
                         </div>
-                        <div className="text-center pointer-events-none">
-                            <p className="font-bold uppercase text-sm mb-1 text-gray-400 group-hover:text-white transition-colors">Datei auswählen oder Drag & Drop</p>
-                            <p className="text-[10px] font-mono text-gray-600 uppercase tracking-widest">PNG, JPG, WEBP (MAX. 10MB)</p>
+                        
+                        <div className="text-center z-10">
+                            <p className="font-black uppercase text-lg mb-2 text-slate-400 group-hover:text-white transition-colors tracking-tight font-outfit">Visual Data Upload</p>
+                            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-[0.2em]">Drag & Drop biometrische Quelldatei</p>
                         </div>
+
+                        <div className="mt-4 px-6 py-2 bg-white/5 rounded-full border border-white/5 text-[9px] font-mono text-slate-500 uppercase tracking-widest z-10">
+                            Format Support: PNG, JPG, WEBP • Max 10MB
+                        </div>
+
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -133,85 +151,93 @@ const FaceScanner = () => {
                             accept="image/*"
                             className="hidden"
                         />
-                    </div>
+                    </motion.div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Preview Area */}
-                        <div className="space-y-4">
-                            <div className="relative aspect-square rounded-3xl overflow-hidden border border-white/10 bg-black/40">
-                                <img src={preview} alt="Scan Preview" className="w-full h-full object-cover" />
-                                {isScanning && (
-                                    <div className="absolute inset-0 bg-blue-500/20 backdrop-blur-[2px] flex items-center justify-center overflow-hidden">
-                                        <div className="w-full h-1 bg-blue-500 absolute top-0 shadow-[0_0_15px_rgba(59,130,246,1)] animate-scan-line" />
-                                        <div className="flex flex-col items-center gap-3">
-                                            <Loader className="animate-spin text-white" size={32} />
-                                            <span className="text-[10px] font-mono text-white uppercase tracking-[0.3em] font-bold">Analysiere Gesichtszüge...</span>
-                                        </div>
-                                    </div>
-                                )}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                        {/* Preview & Control Area */}
+                        <div className="space-y-6">
+                            <div className="relative aspect-square rounded-[2rem] overflow-hidden border border-white/10 bg-black/40 shadow-2xl group">
+                                <img src={preview} alt="Scan Preview" className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                                
+                                {/* Scanning Overlay */}
+                                <AnimatePresence>
+                                    {isScanning && (
+                                        <motion.div 
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            className="absolute inset-0 bg-blue-500/10 backdrop-blur-[2px] flex items-center justify-center overflow-hidden"
+                                        >
+                                            <div className="w-full h-1 bg-blue-500 absolute top-0 shadow-[0_0_30px_rgba(59,130,246,1)] animate-scan-line z-20" />
+                                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent)] animate-pulse" />
+                                            
+                                            <div className="flex flex-col items-center gap-4 z-30">
+                                                <div className="p-4 bg-black/40 rounded-full border border-white/20 backdrop-blur-md">
+                                                    <Loader2 className="animate-spin text-blue-400" size={40} />
+                                                </div>
+                                                <div className="text-center">
+                                                    <span className="text-[11px] font-black font-mono text-white uppercase tracking-[0.4em]">Extraction Sequence</span>
+                                                    <p className="text-[9px] font-mono text-blue-400/80 uppercase mt-1">Analysiere Feature-Vektoren...</p>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+
+                                {/* Frame Accents */}
+                                <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-blue-500/50 rounded-tl-lg" />
+                                <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-blue-500/50 rounded-tr-lg" />
+                                <div className="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-blue-500/50 rounded-bl-lg" />
+                                <div className="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-blue-500/50 rounded-br-lg" />
                             </div>
 
                             {!results && !isScanning && (
                                 <button
                                     onClick={handleScan}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-2xl py-4 font-black uppercase text-xs tracking-[0.2em] transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white rounded-2xl py-5 font-black uppercase text-xs tracking-[0.2em] transition-all shadow-xl shadow-blue-600/20 flex items-center justify-center gap-3 border border-blue-400/30 group"
                                 >
-                                    <Search size={18} />
-                                    Scan Starten
+                                    <Fingerprint size={20} className="group-hover:scale-110 transition-transform" />
+                                    Biometrischen Scan Starten
                                 </button>
+                            )}
+
+                            {error && (
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-3 text-red-400">
+                                    <AlertCircle size={20} />
+                                    <span className="text-xs font-mono uppercase tracking-tight font-bold">{error}</span>
+                                </div>
                             )}
                         </div>
 
-                        {/* Results Area */}
-                        <div className="space-y-4 min-h-[300px]">
-                            <div className="text-[10px] font-mono text-gray-500 uppercase tracking-widest flex items-center gap-2 mb-2">
-                                <div className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
-                                Analyse-Ergebnisse
+                        {/* Analysis Results */}
+                        <div className="flex flex-col h-full min-h-[400px]">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.2em] flex items-center gap-3 font-bold">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,1)]" />
+                                    Analyse-Protokoll
+                                </div>
+                                {results && (
+                                    <div className="px-3 py-1 bg-white/5 rounded-full border border-white/10 text-[9px] font-mono text-slate-400 uppercase tracking-widest">
+                                        {results.length} Matches gefunden
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="flex-1 space-y-4 overflow-y-auto pr-4 custom-scrollbar max-h-[500px]">
                                 {isScanning ? (
-                                    <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-600">
-                                        <div className="space-y-2 w-full">
-                                            <div className="h-16 w-full bg-white/5 animate-pulse rounded-2xl" />
-                                            <div className="h-16 w-full bg-white/5 animate-pulse rounded-2xl" />
-                                            <div className="h-16 w-full bg-white/5 animate-pulse rounded-2xl" />
-                                        </div>
+                                    <div className="space-y-4">
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="h-20 w-full glass-card animate-pulse rounded-2xl" />
+                                        ))}
                                     </div>
                                 ) : results ? (
-                                    <>
-                                        {/* Main Identifier Box */}
-                                        {queryMetadata && (
+                                    <AnimatePresence mode="popLayout">
+                                        {results.length === 0 ? (
                                             <motion.div 
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                className="bg-blue-500/5 border border-blue-500/20 rounded-2xl p-4 mb-4"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="flex flex-col items-center justify-center py-12 text-slate-600 glass-card rounded-[2rem] border-dashed"
                                             >
-                                                <div className="text-[9px] font-mono text-blue-400 uppercase tracking-widest mb-3 flex items-center justify-between">
-                                                    <span>Identifizierte Merkmale</span>
-                                                    <span className="bg-blue-500/20 px-1.5 py-0.5 rounded text-[8px]">Scan-Analyse</span>
-                                                </div>
-                                                <div className="flex gap-4 items-center">
-                                                    <div className="w-12 h-12 rounded-xl overflow-hidden border border-blue-500/20 bg-black/40 relative">
-                                                        <img 
-                                                            src={preview} 
-                                                            alt="Detected Face"
-                                                            className="w-full h-full object-cover" 
-                                                            style={{
-                                                                objectPosition: getFacePosition(queryMetadata)
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-4 flex-1">
-                                                        <div>
-                                                            <div className="text-[8px] font-mono text-gray-500 uppercase">Alter (Est.)</div>
-                                                            <div className="text-sm font-black text-white">{queryMetadata.age || '??'} <span className="text-[9px] font-normal text-gray-500">J.</span></div>
-                                                        </div>
-                                                        <div>
-                                                            <div className="text-[8px] font-mono text-gray-500 uppercase">Geschlecht</div>
-                                                            <div className="text-sm font-black text-white uppercase">{queryMetadata.gender || '??'}</div>
-                                                        </div>
-                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )}
