@@ -653,9 +653,9 @@ const Dashboard = () => {
                                 </div>
                             )}
                         </div>
-                    )}
+                )}
 
-                    {activeTab === 'groups' && (
+                {activeTab === 'groups' && (
                         <div className="space-y-8">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 glass-panel p-8 rounded-[2rem] border-white/5 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 blur-[100px] pointer-events-none" />
