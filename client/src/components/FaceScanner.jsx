@@ -234,18 +234,18 @@ const FaceScanner = () => {
                                     <AnimatePresence mode="popLayout">
                                         {results.length === 0 ? (
                                             <motion.div 
+                                                key="no-results"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                className="flex flex-col items-center justify-center py-12 text-slate-600 glass-card rounded-[2rem] border-dashed"
+                                                exit={{ opacity: 0 }}
+                                                className="flex flex-col items-center justify-center py-12 text-slate-600 glass-card rounded-[2rem] border-dashed border-2 border-white/5"
                                             >
-                                                </div>
+                                                <Info size={40} className="mb-4 opacity-20" />
+                                                <p className="font-mono text-[10px] uppercase tracking-widest">Keine Übereinstimmungen</p>
                                             </motion.div>
-                                        )}
-
-                                        {results.length > 0 ? (
+                                        ) : (
                                             results.map((result, idx) => {
                                                 // Calculate a more user-friendly match percentage
-                                                // InsightFace cosine distance: 0 = perfect, 0.4 = strong, 0.6 = possible
                                                 const matchPercent = Math.max(0, Math.min(100, (1 - result.distance) * 100)).toFixed(1);
                                                 const isStrongMatch = result.distance < 0.5;
                                                 const isPotentialMatch = result.distance >= 0.5 && result.distance < 0.65;
@@ -259,6 +259,7 @@ const FaceScanner = () => {
                                                         key={result.person.id}
                                                         initial={{ opacity: 0, x: 20 }}
                                                         animate={{ opacity: 1, x: 0 }}
+                                                        exit={{ opacity: 0, x: -20 }}
                                                         transition={{ delay: idx * 0.1 }}
                                                         onClick={() => navigate(`/person/${result.person.id}`, { state: { activeTab: 'facescan' } })}
                                                         className={`bg-white/5 border border-white/10 hover:border-blue-500/40 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group/result ${isStrongMatch ? 'ring-1 ring-green-500/10' : ''}`}
@@ -277,69 +278,64 @@ const FaceScanner = () => {
                                                                         e.target.src = '/placeholder-face.png';
                                                                     }}
                                                                 />
-                                                        ) : (
-                                                            <div className="w-full h-full bg-white/5 flex items-center justify-center text-gray-700">
-                                                                <User size={20} />
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-center justify-between gap-2">
-                                                            <div className="flex-1 min-w-0">
-                                                                <div className="flex items-center gap-2 flex-wrap mb-1">
-                                                                    <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
-                                                                    {idx === 0 && isStrongMatch && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0 uppercase">Best Match</span>}
-                                                                    {isPotentialMatch && <span className="px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500/70 text-[9px] rounded font-mono border border-yellow-500/20 flex-shrink-0 uppercase">Möglich</span>}
-                                                                    {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0 uppercase">✓ Verifiziert</span>}
+                                                            ) : (
+                                                                <div className="w-full h-full bg-white/5 flex items-center justify-center text-gray-700">
+                                                                    <User size={20} />
                                                                 </div>
-                                                                <div className="flex items-center gap-2 mt-1">
-                                                                    <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                                        <div
-                                                                            className={`h-full transition-all duration-1000 ${isStrongMatch ? 'bg-green-500' : 'bg-yellow-500/50'}`}
-                                                                            style={{ width: `${matchPercent}%` }}
-                                                                        />
+                                                            )}
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                                        <h4 className="font-bold text-sm text-white truncate group-hover/result:text-blue-400 transition-colors uppercase">{result.person.name}</h4>
+                                                                        {idx === 0 && isStrongMatch && <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 text-[9px] rounded font-mono border border-green-500/30 flex-shrink-0 uppercase">Best Match</span>}
+                                                                        {isPotentialMatch && <span className="px-1.5 py-0.5 bg-yellow-500/10 text-yellow-500/70 text-[9px] rounded font-mono border border-yellow-500/20 flex-shrink-0 uppercase">Möglich</span>}
+                                                                        {result.verified && <span className="px-1.5 py-0.5 bg-green-500/15 text-green-500 text-[9px] rounded font-mono flex-shrink-0 uppercase">✓ Verifiziert</span>}
                                                                     </div>
-                                                                    <span className={`text-[9px] font-mono font-bold ${isStrongMatch ? 'text-green-500' : 'text-yellow-500/70'}`}>{matchPercent}%</span>
+                                                                    <div className="flex items-center gap-2 mt-1">
+                                                                        <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+                                                                            <div
+                                                                                className={`h-full transition-all duration-1000 ${isStrongMatch ? 'bg-green-500' : 'bg-yellow-500/50'}`}
+                                                                                style={{ width: `${matchPercent}%` }}
+                                                                            />
+                                                                        </div>
+                                                                        <span className={`text-[9px] font-mono font-bold ${isStrongMatch ? 'text-green-500' : 'text-yellow-500/70'}`}>{matchPercent}%</span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                            
-                                                            {/* Feedback Buttons */}
-                                                            <div className="flex items-center gap-1">
-                                                                {feedbackSent[result.person.id] ? (
-                                                                    <div className="text-[8px] font-mono text-green-500 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
-                                                                        GESPEICHERT
-                                                                    </div>
-                                                                ) : (
-                                                                    <>
-                                                                        <button 
-                                                                            onClick={(e) => handleFeedback(e, result.person.id, true)}
-                                                                            className="p-2 hover:bg-green-500/20 text-gray-500 hover:text-green-400 rounded-lg transition-all"
-                                                                            title="Richtig"
-                                                                        >
-                                                                            <CheckCircle2 size={18} />
-                                                                        </button>
-                                                                        <button 
-                                                                            onClick={(e) => handleFeedback(e, result.person.id, false)}
-                                                                            className="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg transition-all"
-                                                                            title="Falsch"
-                                                                        >
-                                                                            <XCircle size={18} />
-                                                                        </button>
-                                                                    </>
-                                                                )}
+                                                                
+                                                                {/* Feedback Buttons */}
+                                                                <div className="flex items-center gap-1">
+                                                                    {feedbackSent[result.person.id] ? (
+                                                                        <div className="text-[8px] font-mono text-green-500 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
+                                                                            GESPEICHERT
+                                                                        </div>
+                                                                    ) : (
+                                                                        <>
+                                                                            <button 
+                                                                                onClick={(e) => handleFeedback(e, result.person.id, true)}
+                                                                                className="p-2 hover:bg-green-500/20 text-gray-500 hover:text-green-400 rounded-lg transition-all"
+                                                                                title="Richtig"
+                                                                            >
+                                                                                <CheckCircle2 size={18} />
+                                                                            </button>
+                                                                            <button 
+                                                                                onClick={(e) => handleFeedback(e, result.person.id, false)}
+                                                                                className="p-2 hover:bg-red-500/20 text-gray-500 hover:text-red-400 rounded-lg transition-all"
+                                                                                title="Falsch"
+                                                                            >
+                                                                                <XCircle size={18} />
+                                                                            </button>
+                                                                        </>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                    </div>
-                                                </motion.div>
-                                            );
-                                        })
-                                    ) : (
-                                            <div className="flex flex-col items-center justify-center h-full py-12 text-center text-gray-600 gap-4">
-                                                <Search size={40} className="opacity-20" />
-                                                <p className="text-xs font-mono uppercase tracking-widest">Keine Übereinstimmung gefunden</p>
-                                            </div>
+                                                    </motion.div>
+                                                );
+                                            })
                                         )}
-                                    </>
+                                    </AnimatePresence>
                                 ) : error ? (
                                     <div className="flex flex-col items-center justify-center h-full py-12 text-center text-red-500 gap-4 bg-red-500/5 rounded-3xl border border-red-500/10">
                                         <AlertCircle size={40} className="opacity-50" />
