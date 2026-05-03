@@ -73,6 +73,7 @@ const PersonCard = ({ person }) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
             whileHover={{ y: -8, transition: { duration: 0.4 } }}
+            whileTap={{ scale: 0.98 }}
             className="group glass-card rounded-[2.5rem] p-6 shadow-2xl relative overflow-hidden cursor-pointer border-white/5 hover:border-blue-500/30"
             onClick={() => navigate(`/person/${person.id}`, { state: { activeTab: 'people' } })}
         >

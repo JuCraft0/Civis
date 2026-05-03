@@ -731,7 +731,7 @@ const PersonDetail = () => {
                             <div className="w-1.5 h-14 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full shadow-[0_0_20px_rgba(59,130,246,0.4)]" />
                             <div>
                                 <h2 className="text-5xl font-black uppercase tracking-tighter text-white leading-none mb-2">Registry Access</h2>
-                                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em]">Amending Biological Record: {person.id.substring(0, 12)}</p>
+                                <p className="text-[10px] font-mono text-slate-500 uppercase tracking-[0.4em]">Amending Biological Record: {person.id.toString().substring(0, 12)}</p>
                             </div>
                         </div>
 
@@ -756,7 +756,7 @@ const PersonDetail = () => {
                                     className="flex items-center gap-4 mb-6"
                                 >
                                     <div className="px-4 py-1.5 bg-blue-600/10 rounded-lg border border-blue-500/30 backdrop-blur-md">
-                                        <span className="text-[10px] font-mono font-black text-blue-400 uppercase tracking-[0.2em]">Subject ID: {person.id.substring(0, 12)}</span>
+                                        <span className="text-[10px] font-mono font-black text-blue-400 uppercase tracking-[0.2em]">Subject ID: {person.id.toString().substring(0, 12)}</span>
                                     </div>
                                     <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-lg border border-green-500/30">
                                         <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)] animate-pulse" />

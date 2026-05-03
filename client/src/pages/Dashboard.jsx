@@ -455,9 +455,17 @@ const Dashboard = () => {
         setShowGroupForm(true);
     };
 
-    const filteredPeople = (people || []).filter(person =>
-        person && person.name && person.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredPeople = (people || []).filter(person => {
+        if (!person) return false;
+        const search = searchTerm.toLowerCase();
+        return (
+            (person.name && person.name.toLowerCase().includes(search)) ||
+            (person.age && person.age.toString().includes(search)) ||
+            (person.group_name && person.group_name.toLowerCase().includes(search)) ||
+            (person.group_path && person.group_path.some(p => p.toLowerCase().includes(search))) ||
+            (person.id && person.id.toString().includes(search))
+        );
+    });
 
     // Compute Graph Data
     const graphData = useMemo(() => {
@@ -559,13 +567,13 @@ const Dashboard = () => {
                         </div>
                     </div>
                 </header>
-
-                {/* Floating Navigation Pill */}
-                <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-fit">
+                
+                {/* Floating Navigation Pill - MOVED TO TOP */}
+                <div className="sticky top-4 z-50 w-full flex justify-center pointer-events-none mb-12">
                     <motion.div 
-                        initial={{ y: 100, opacity: 0 }}
+                        initial={{ y: -50, opacity: 0 }}
                         animate={{ y: 0, opacity: 1 }}
-                        className="glass-panel p-2.5 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-2 border-white/10 bg-slate-900/90"
+                        className="glass-panel p-2 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-1 border-white/10 bg-slate-900/90 pointer-events-auto"
                     >
                         {[
                             { id: 'people', icon: Users, label: 'Identities', color: 'blue' },
@@ -583,7 +591,7 @@ const Dashboard = () => {
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative px-6 py-4 rounded-[1.5rem] flex items-center gap-3 transition-all duration-500 group overflow-hidden ${isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                                    className={`relative px-5 py-3.5 rounded-[1.5rem] flex items-center gap-3 transition-all duration-500 group overflow-hidden ${isActive ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                                 >
                                     {isActive && (
                                         <motion.div 
@@ -592,12 +600,12 @@ const Dashboard = () => {
                                             transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                                         />
                                     )}
-                                    <Icon size={18} className={`relative z-10 ${isActive ? 'scale-110 transition-transform' : ''}`} />
+                                    <Icon size={16} className={`relative z-10 ${isActive ? 'scale-110 transition-transform' : ''}`} />
                                     <span className={`relative z-10 text-[10px] font-black uppercase tracking-[0.2em] hidden lg:inline`}>
                                         {tab.label}
                                     </span>
                                     {!isActive && (
-                                        <div className="absolute -top-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-800/90 backdrop-blur-md text-white text-[9px] font-black rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none uppercase tracking-[0.2em] border border-white/10 whitespace-nowrap shadow-xl scale-95 group-hover:scale-100">
+                                        <div className="absolute top-14 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-800/90 backdrop-blur-md text-white text-[9px] font-black rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none uppercase tracking-[0.2em] border border-white/10 whitespace-nowrap shadow-xl scale-95 group-hover:scale-100">
                                             {tab.label}
                                         </div>
                                     )}
