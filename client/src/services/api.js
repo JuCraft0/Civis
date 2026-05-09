@@ -185,3 +185,21 @@ export const deleteGroup = async (id) => {
     const response = await api.delete(`/groups/${id}`);
     return response.data;
 };
+
+export const searchAddress = async (query) => {
+    if (!query || query.length < 3) return [];
+    try {
+        const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
+            params: {
+                q: query,
+                format: 'json',
+                addressdetails: 1,
+                limit: 5
+            }
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Address search failed", error);
+        return [];
+    }
+};

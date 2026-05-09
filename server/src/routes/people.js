@@ -26,13 +26,23 @@ router.get('/maintenance-progress', authenticateToken, (req, res) => {
 
 async function getFullPerson(personId) {
     const person = await get(`
-        SELECT p.*, g.name as group_name 
+        SELECT p.*
         FROM people p 
-        LEFT JOIN groups g ON p.group_id = g.id 
         WHERE p.id = ?
     `, [personId]);
 
     if (!person) return null;
+
+    const personGroups = await all(`
+        SELECT g.id, g.name, g.parent_id
+        FROM groups g
+        JOIN person_groups pg ON pg.group_id = g.id
+        WHERE pg.person_id = ?
+    `, [personId]);
+
+    person.groups = personGroups;
+    person.group_id = personGroups.length > 0 ? personGroups[0].id : null;
+    person.group_name = personGroups.length > 0 ? personGroups[0].name : null;
 
     const relations = await all(`
         SELECT p.id, p.name, p.gender, sl.type, sl.status
@@ -55,28 +65,35 @@ async function getFullPerson(personId) {
         person.online_profiles = [];
     }
 
-    person.group_path = await buildGroupPathAsync(person.group_id);
+    person.group_paths = await Promise.all(personGroups.map(g => buildGroupPathAsync(g.id)));
+    person.group_path = person.group_paths.length > 0 ? person.group_paths[0] : [];
     return person;
 }
 
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const rows = await all(`
-            SELECT p.*, g.name as group_name 
-            FROM people p 
-            LEFT JOIN groups g ON p.group_id = g.id
-        `);
+        const rows = await all(`SELECT * FROM people`);
 
         if (rows.length === 0) return res.json({ message: "success", data: [] });
 
         const relationships = await all("SELECT * FROM relationships");
-        const groups = await all("SELECT id, name, parent_id FROM groups");
+        const allGroups = await all("SELECT id, name, parent_id FROM groups");
+        const allPersonGroups = await all("SELECT pg.person_id, g.id, g.name, g.parent_id FROM person_groups pg JOIN groups g ON pg.group_id = g.id");
 
         const groupMap = {};
-        groups.forEach(g => groupMap[g.id] = g);
+        allGroups.forEach(g => groupMap[g.id] = g);
 
         const peopleMap = {};
-        rows.forEach(p => peopleMap[p.id] = p);
+        rows.forEach(p => {
+            peopleMap[p.id] = p;
+            p.groups = [];
+        });
+
+        allPersonGroups.forEach(pg => {
+            if (peopleMap[pg.person_id]) {
+                peopleMap[pg.person_id].groups.push({ id: pg.id, name: pg.name, parent_id: pg.parent_id });
+            }
+        });
 
         const familyRelations = {};
         const partnerRelations = {};
@@ -119,7 +136,11 @@ router.get('/', authenticateToken, async (req, res) => {
             p.relationship_count = p.family.length + p.partners.length + p.social.length;
             try { p.online_profiles = p.online_profiles ? JSON.parse(p.online_profiles) : []; } catch (e) { p.online_profiles = []; }
 
-            if (p.group_id) p.group_path = getPath(p.group_id);
+            p.group_paths = p.groups.map(g => getPath(g.id));
+            // Compatibility
+            p.group_id = p.groups.length > 0 ? p.groups[0].id : null;
+            p.group_name = p.groups.length > 0 ? p.groups[0].name : null;
+            p.group_path = p.group_paths.length > 0 ? p.group_paths[0] : [];
         }
 
         res.json({ message: "success", data: rows });
@@ -140,15 +161,22 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
 router.post('/', authenticateToken, requireEditor, async (req, res) => {
     try {
-        const { name, age, siblings, partners, family, social, additional_info, group_id, birth_date, gender, aliases, location, photo_url, photo_urls, online_profiles } = req.body;
+        const { name, age, siblings, partners, family, social, additional_info, group_id, group_ids, birth_date, gender, aliases, location, photo_url, photo_urls, online_profiles } = req.body;
         if (!name) return res.status(400).json({ error: "Name is required" });
 
         const result = await run(
             'INSERT INTO people (name, age, siblings, partners, additional_info, group_id, birth_date, gender, aliases, location, photo_url, photo_urls, online_profiles) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)',
-            [name, age || 0, '[]', '[]', additional_info || '', group_id || null, birth_date || '', gender || '', aliases || '', location || '', photo_url || '', JSON.stringify(photo_urls || []), JSON.stringify(online_profiles || [])]
+            [name, age || 0, '[]', '[]', additional_info || '', (group_ids && group_ids.length > 0) ? group_ids[0] : (group_id || null), birth_date || '', gender || '', aliases || '', location || '', photo_url || '', JSON.stringify(photo_urls || []), JSON.stringify(online_profiles || [])]
         );
 
         const newId = result.lastID;
+
+        // Sync groups
+        const groupsToSync = group_ids || (group_id ? [group_id] : []);
+        for (const gId of groupsToSync) {
+            await run("INSERT INTO person_groups (person_id, group_id) VALUES (?, ?) ON CONFLICT DO NOTHING", [newId, gId]);
+        }
+
         // `family`, `partners`, and `social` should be JSON arrays from the frontend now
         await syncRelationships(newId, family, 'Familie');
         await syncRelationships(newId, partners, 'Beziehung/Partner');
@@ -164,13 +192,29 @@ router.post('/', authenticateToken, requireEditor, async (req, res) => {
 router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
     try {
         const personId = req.params.id;
-        const { name, age, siblings, partners, family, social, additional_info, group_id, birth_date, gender, aliases, location, photo_url, photo_urls, online_profiles, immich_person_id } = req.body;
+        const { name, age, siblings, partners, family, social, additional_info, group_id, group_ids, birth_date, gender, aliases, location, photo_url, photo_urls, online_profiles, immich_person_id } = req.body;
 
         const current = await get("SELECT * FROM people WHERE id = ?", [personId]);
         if (!current) return res.status(404).json({ error: "Person not found" });
 
-        let updatedGroupId = (group_id !== undefined) ? group_id : current.group_id;
-        if (updatedGroupId === '') updatedGroupId = null;
+        let updatedGroupId = current.group_id;
+        if (group_ids !== undefined && group_ids.length > 0) {
+            updatedGroupId = group_ids[0];
+        } else if (group_id !== undefined) {
+            updatedGroupId = group_id === '' ? null : group_id;
+        }
+
+        // Sync groups
+        if (group_ids !== undefined) {
+            await run("DELETE FROM person_groups WHERE person_id = ?", [personId]);
+            for (const gId of group_ids) {
+                if (gId) await run("INSERT INTO person_groups (person_id, group_id) VALUES (?, ?) ON CONFLICT DO NOTHING", [personId, gId]);
+            }
+        } else if (group_id !== undefined) {
+            // If only group_id is provided, treat it as the only group
+            await run("DELETE FROM person_groups WHERE person_id = ?", [personId]);
+            if (group_id) await run("INSERT INTO person_groups (person_id, group_id) VALUES (?, ?) ON CONFLICT DO NOTHING", [personId, group_id]);
+        }
 
         // Safety: If the photo_url is cleared, we should also clear the face identification data
         let finalFaceDescriptor = req.body.face_descriptor !== undefined ? req.body.face_descriptor : current.face_descriptor;
@@ -187,8 +231,6 @@ router.put('/:id', authenticateToken, requireEditor, async (req, res) => {
                 await pool.query('DELETE FROM person_photos WHERE person_id = $1', [personId]);
             } catch (e) { console.error("Error deleting photos in DB on module clear", e); }
         }
-
-        console.log(`[Update] Person ${personId}: photo_url="${photo_url}", face_descriptor is ${finalFaceDescriptor ? 'SET' : 'NULL'}`);
 
         await run(`
             UPDATE people SET 

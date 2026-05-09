@@ -143,11 +143,27 @@ const PersonCard = ({ person }) => {
 
                 {/* Footer: Group & Action */}
                 <div className="pt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-600/5 rounded-xl border border-blue-500/10 group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all min-w-0">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] truncate font-mono">
-                            {person.group_path ? person.group_path[person.group_path.length - 1] : (person.group_name || 'UNASSIGNED')}
-                        </span>
+                    <div className="flex flex-wrap gap-2 min-w-0 flex-1">
+                        {person.groups && person.groups.length > 0 ? (
+                            person.groups.slice(0, 2).map((g, idx) => (
+                                <div key={idx} className="flex items-center gap-2 px-3 py-1.5 bg-blue-600/5 rounded-lg border border-blue-500/10 group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all">
+                                    <div className="w-1 h-1 rounded-full bg-blue-500" />
+                                    <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest truncate font-mono">
+                                        {g.name}
+                                    </span>
+                                </div>
+                            ))
+                        ) : (
+                            <div className="flex items-center gap-3 px-4 py-2.5 bg-blue-600/5 rounded-xl border border-blue-500/10 group-hover:bg-blue-600/20 group-hover:border-blue-500/30 transition-all">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                <span className="text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] truncate font-mono">
+                                    {person.group_path ? person.group_path[person.group_path.length - 1] : (person.group_name || 'UNASSIGNED')}
+                                </span>
+                            </div>
+                        )}
+                        {person.groups && person.groups.length > 2 && (
+                             <span className="text-[8px] text-slate-500 font-mono self-center">+{person.groups.length - 2}</span>
+                        )}
                     </div>
                     
                     <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 group-hover:text-white group-hover:bg-blue-600 group-hover:border-blue-500 group-hover:shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all shrink-0">

@@ -141,6 +141,20 @@ async function initDB(retries = 5) {
             CONSTRAINT fk_immich_face FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE
         )`);
 
+        await pool.query(`CREATE TABLE IF NOT EXISTS person_groups (
+            person_id INTEGER,
+            group_id INTEGER,
+            PRIMARY KEY (person_id, group_id),
+            CONSTRAINT fk_person_groups_person FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE,
+            CONSTRAINT fk_person_groups_group FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
+        )`);
+
+        // Migration: Move existing group_id from people to person_groups
+        const { rows: existingLinks } = await pool.query("SELECT id, group_id FROM people WHERE group_id IS NOT NULL");
+        for (const link of existingLinks) {
+            await pool.query("INSERT INTO person_groups (person_id, group_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", [link.id, link.group_id]);
+        }
+
         await addColumnIfMissing('relationships', 'status', 'TEXT');
         await addColumnIfMissing('immich_faces', 'quality', 'DOUBLE PRECISION');
         await addColumnIfMissing('immich_faces', 'quality_details', 'TEXT');

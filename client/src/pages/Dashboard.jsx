@@ -88,7 +88,10 @@ const GroupNode = ({ group, onEdit, onDelete, people = [], level = 0 }) => {
     };
 
     const descendantIds = getDescendantIds(group);
-    const assignedPeople = (people || []).filter(p => descendantIds.includes(p.group_id));
+    const assignedPeople = (people || []).filter(p => {
+        const pGroupIds = p.group_ids || (p.group_id ? [p.group_id] : []);
+        return descendantIds.some(id => pGroupIds.includes(id));
+    });
 
     return (
         <div className="space-y-3">
@@ -462,6 +465,7 @@ const Dashboard = () => {
         return (
             (person.name && person.name.toLowerCase().includes(search)) ||
             (person.age && person.age.toString().includes(search)) ||
+            (person.groups && person.groups.some(g => g.name.toLowerCase().includes(search))) ||
             (person.group_name && person.group_name.toLowerCase().includes(search)) ||
             (person.group_path && person.group_path.some(p => p.toLowerCase().includes(search))) ||
             (person.id && person.id.toString().includes(search))
@@ -485,10 +489,11 @@ const Dashboard = () => {
         (people || []).forEach(p => {
             nodes.push({ id: `person_${p.id}`, name: p.name, type: 'person', photo_url: p.photo_url });
 
-            // Link to group
-            if (p.group_id) {
-                links.push({ source: `person_${p.id}`, target: `group_${p.group_id}`, type: 'Group' });
-            }
+            // Link to groups
+            const pGroupIds = p.group_ids || (p.group_id ? [p.group_id] : []);
+            pGroupIds.forEach(gid => {
+                links.push({ source: `person_${p.id}`, target: `group_${gid}`, type: 'Group' });
+            });
 
             // Link relations
             ['family', 'partners', 'social'].forEach(relType => {

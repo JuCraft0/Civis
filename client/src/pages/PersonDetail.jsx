@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe, Brain, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, Plus, Image as ImageIcon, Globe, Brain, RefreshCw, FolderTree } from 'lucide-react';
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { toast } from 'react-hot-toast';
@@ -435,6 +435,31 @@ const PersonDetail = () => {
             render: (p) => (
                 <div className="text-2xl font-black text-white uppercase tracking-tighter">
                     {p.location}
+                </div>
+            )
+        },
+        {
+            id: 'clusters',
+            label: 'Clusters / Designations',
+            icon: FolderTree,
+            color: 'orange',
+            fullWidth: true,
+            isActive: (p) => (p.groups && p.groups.length > 0) || p.group_name,
+            render: (p) => (
+                <div className="flex flex-wrap gap-3">
+                    {p.groups && p.groups.length > 0 ? (
+                        p.groups.map((group, idx) => (
+                            <div key={idx} className="px-6 py-3 bg-orange-500/5 border border-orange-500/20 rounded-2xl text-orange-300 transition-all flex items-center gap-3 shadow-lg">
+                                <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                                <span className="text-sm font-black uppercase tracking-widest">{group.name}</span>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="px-6 py-3 bg-orange-500/5 border border-orange-500/20 rounded-2xl text-orange-300 transition-all flex items-center gap-3 shadow-lg">
+                            <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                            <span className="text-sm font-black uppercase tracking-widest">{p.group_name || 'UNASSIGNED'}</span>
+                        </div>
+                    )}
                 </div>
             )
         },

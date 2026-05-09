@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { getPerson, updatePerson, deletePerson, uploadPhoto, deletePhoto, getGroups, getPeople } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, deletePhoto, getGroups, getPeople, searchAddress } from '../services/api';
 import HUDSelect from './HUDSelect';
-import { Calendar as CalendarIcon, Save, X, Users, Search, UserPlus, UserMinus, Plus, Image as ImageIcon, Upload, ChevronDown, Globe, Trash2, Scan, Check, MapPin, Clock } from 'lucide-react';
+import HUDMultiSelect from './HUDMultiSelect';
+import { Calendar as CalendarIcon, Save, X, Users, Search, UserPlus, UserMinus, Plus, Image as ImageIcon, Upload, ChevronDown, Globe, Trash2, Scan, Check, MapPin, Clock, FolderTree } from 'lucide-react';
 import { analyzeFace, getImmichPeople } from '../services/api';
 import axios from 'axios';
 
@@ -276,6 +277,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         location: '',
         additional_info: '',
         group_id: '',
+        group_ids: [],
         family: [],
         partners: [],
         social: [],
@@ -284,6 +286,28 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         photo_url: '',
         photo_urls: []
     });
+
+    const [addressSearch, setAddressSearch] = useState('');
+    const [addressSuggestions, setAddressSuggestions] = useState([]);
+    const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+
+    useEffect(() => {
+        const fetchAddresses = async () => {
+            if (addressSearch.length < 3) {
+                setAddressSuggestions([]);
+                return;
+            }
+            try {
+                const results = await searchAddress(addressSearch);
+                setAddressSuggestions(results);
+            } catch (err) {
+                console.error("Address search error", err);
+            }
+        };
+
+        const timeoutId = setTimeout(fetchAddresses, 500);
+        return () => clearTimeout(timeoutId);
+    }, [addressSearch]);
     const [photoFiles, setPhotoFiles] = useState([null, null, null, null, null]);
     const [photoPreviews, setPhotoPreviews] = useState(['', '', '', '', '']);
 
@@ -314,7 +338,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
             { id: 'additional_info', label: 'Zusätzliche Infos', icon: Plus }
         ],
         'Verbindungen': [
-            { id: 'group_id', label: 'Gruppe', icon: Users },
+            { id: 'group_id', label: 'Gruppe', icon: FolderTree },
             { id: 'family', label: 'Familie', icon: Users },
             { id: 'partners', label: 'Beziehung/Partner', icon: Users },
             { id: 'social', label: 'Soziales Umfeld', icon: Users },
@@ -388,6 +412,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                 location: initialData.location || '',
                 additional_info: initialData.additional_info || '',
                 group_id: initialData.group_id !== null && initialData.group_id !== undefined ? initialData.group_id : '',
+                group_ids: initialData.groups?.map(g => g.id) || (initialData.group_id ? [initialData.group_id] : []),
                 family: initialData.family || [],
                 partners: initialData.partners || [],
                 social: initialData.social || [],
@@ -578,7 +603,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
 
         onSubmit({
             ...finalData,
-            group_id: finalData.group_id === '' || finalData.group_id === null ? null : parseInt(finalData.group_id)
+            group_id: (finalData.group_ids && finalData.group_ids.length > 0) ? finalData.group_ids[0] : (finalData.group_id || null)
         }, photoFiles);
     };
 
@@ -899,16 +924,61 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                                 {renderRemoveButton('location')}
                                 <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Primärer Aufenthaltsort</label>
                                 <div className="relative group">
-                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size={18} />
+                                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors z-10" size={18} />
                                     <input
                                         type="text"
                                         name="location"
                                         value={formData.location}
-                                        onChange={handleChange}
+                                        onChange={(e) => {
+                                            handleChange(e);
+                                            setAddressSearch(e.target.value);
+                                            setShowAddressSuggestions(true);
+                                        }}
+                                        onFocus={() => setShowAddressSuggestions(true)}
                                         className="w-full glass-panel rounded-2xl pl-12 pr-4 py-4 text-white focus:outline-none focus:border-blue-500/50 transition-all uppercase font-mono text-xs border border-white/5 tracking-wider"
                                         placeholder="STADT / LAND / REGION..."
                                     />
+
+                                    <AnimatePresence>
+                                        {showAddressSuggestions && addressSuggestions.length > 0 && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: 10 }}
+                                                className="absolute z-50 w-full mt-2 glass-panel rounded-xl shadow-2xl border border-white/10 overflow-hidden bg-[#0a0a0c]"
+                                            >
+                                                {addressSuggestions.map((suggestion, idx) => (
+                                                    <button
+                                                        key={idx}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setFormData({ ...formData, location: suggestion.display_name });
+                                                            setAddressSuggestions([]);
+                                                            setShowAddressSuggestions(false);
+                                                        }}
+                                                        className="w-full px-5 py-3 text-left hover:bg-white/5 border-b border-white/5 last:border-0 transition-all"
+                                                    >
+                                                        <p className="text-[10px] font-black text-white uppercase tracking-wider truncate">{suggestion.display_name}</p>
+                                                    </button>
+                                                ))}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
+                            </motion.div>
+                        )}
+
+                        {activeModules.includes('group_id') && (
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative group pt-6">
+                                {renderRemoveButton('group_id')}
+                                <HUDMultiSelect
+                                    label="Cluster (Mehrfachauswahl möglich)"
+                                    value={formData.group_ids}
+                                    onChange={(vals) => setFormData({ ...formData, group_ids: vals })}
+                                    options={groups.map(g => ({ value: g.id, label: g.name }))}
+                                    icon={FolderTree}
+                                    color="orange"
+                                />
                             </motion.div>
                         )}
 
