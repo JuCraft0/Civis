@@ -87,7 +87,7 @@ const InlineStatusSelect = ({ value, options, onChange, colorClass }) => {
                         initial={{ opacity: 0, y: -5, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                        className="absolute right-0 top-full mt-1 z-50 bg-[#121214] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px]"
+                        className="absolute right-0 top-full mt-1 z-[100] bg-[#121214] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px]"
                     >
                         <div className="max-h-48 overflow-y-auto">
                             {options.map(opt => (
@@ -207,7 +207,7 @@ const RelationSection = ({
             </div>
 
             <div className="flex flex-col gap-2">
-                {relationsList.map(relation => {
+                {relationsList.map((relation, idx) => {
                     const person = allPeople?.find(p => p.name.toLowerCase() === relation.name.toLowerCase());
                     const isLinked = !!person;
 
@@ -215,7 +215,8 @@ const RelationSection = ({
                         <motion.div
                             layout
                             key={relation.name}
-                            className={`px-4 py-2.5 glass-panel border rounded-xl text-[10px] font-mono flex items-center justify-between group transition-all hover:border-white/10 ${colorClass.split(' ')[0]}`}
+                            style={{ zIndex: 50 - idx }}
+                            className={`px-4 py-2.5 glass-panel border rounded-xl text-[10px] font-mono flex items-center justify-between group transition-all hover:border-white/10 relative ${colorClass.split(' ')[0]}`}
                         >
                             <div className="flex items-center gap-3">
                                 {isLinked ? (
@@ -680,7 +681,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
             </div>
 
             {/* Main Form Content */}
-            <div className="glass-panel rounded-3xl border border-white/5 p-8 shadow-2xl relative overflow-hidden">
+            <div className="glass-panel rounded-3xl border border-white/5 p-8 shadow-2xl relative">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 opacity-30"></div>
                 
                 <div className="space-y-10 relative">
