@@ -578,7 +578,7 @@ const Dashboard = () => {
                         {[
                             { id: 'people', icon: Users, label: 'Identities', color: 'blue' },
                             { id: 'groups', icon: FolderTree, label: 'Clusters', color: 'orange' },
-                            { id: 'network', icon: Share2, label: 'Neural Net', color: 'green' },
+                            { id: 'network', icon: Share2, label: 'Link Tree', color: 'green' },
                             { id: 'facescan', icon: Scan, label: 'Scanner', color: 'blue' },
                             { id: 'users', icon: Shield, label: 'Terminal', color: 'purple', admin: true },
                             { id: 'debug', icon: Database, label: 'System', color: 'orange', admin: true },
@@ -627,7 +627,7 @@ const Dashboard = () => {
                                     placeholder="SEARCH NEURAL IDENTITY..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="glass-input pl-16"
+                                    className="glass-input w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-16 pr-5 text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50 transition-all font-outfit text-lg"
                                 />
                             </div>
                             
@@ -716,7 +716,7 @@ const Dashboard = () => {
                                             <Share2 size={20} />
                                         </div>
                                         <h2 className="text-3xl font-black uppercase tracking-tighter text-white font-outfit">
-                                            Synapse Map
+                                            Link Tree
                                         </h2>
                                     </div>
                                     <p className="text-slate-500 text-[10px] font-mono uppercase tracking-[0.2em]">Interactive visualization of node interconnections</p>

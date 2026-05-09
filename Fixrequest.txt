@@ -1,0 +1,35 @@
+Probllebe mit dem neuen ui:
+
+Main Page: 
+	Keine Gestilte suchbar nur preset suchbar pasrt nicht zum ui
+
+
+Profile Page:
+	Änderung der modul namen und anzeigen namen von Zumbeispiel von Bio-Metrics / age zu nur Age das mitt allen anderen modullen also 
+	AFFILIATION zu Group
+	Bio Type zu Gender
+	CodeNAme zu Alias
+	Interpersonal Bonds zu PArtners
+	Extended Network zu Social
+	Intelligence Brief zu Notes
+	Digital Footprint zu Profiles
+	Biometrische Datenbank Evidence Collection zu Immich Images
+		
+		Edit Page
+			Nicht ereichbar
+
+
+Neuronal NEt PAge
+	NAmens Änderung zu Link Tree
+	personnen KArten überlappen sich mehr separirung zuwichen den icons
+
+Systems page 
+ 	Nicht erreichbar
+
+
+Debug infos 
+ Du hast zugriff auf
+  https://civisos.jcpconnect.de/
+ mit den logins Antigravity | Antigravity
+
+achtung das ist nur eine repräsentation des momgentanigen alle änderungen haben keinen effect auf das du kannst also dien momentannen zustand sehen aber nicht wenn du was änderst wie es aussieht

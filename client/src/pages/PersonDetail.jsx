@@ -58,8 +58,8 @@ const ImmichFacesModule = ({ personId, faces, onSetPrimary }) => {
                 <div className="flex items-center gap-4">
                     <div className="w-1.5 h-8 bg-blue-500/40 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.3)]" />
                     <div>
-                        <span className="text-[10px] font-mono font-black uppercase tracking-[0.3em] text-slate-500 block">Biometrische Datenbank</span>
-                        <span className="text-xl font-black uppercase tracking-tighter text-white">Evidence Collection ({faces.length})</span>
+                        <span className="text-[10px] font-mono font-black uppercase tracking-[0.3em] text-slate-500 block">Immich</span>
+                        <span className="text-xl font-black uppercase tracking-tighter text-white">Images ({faces.length})</span>
                     </div>
                 </div>
                 <button 
@@ -325,7 +325,7 @@ const PersonDetail = () => {
         },
         {
             id: 'age',
-            label: 'Bio-Metrics / Age',
+            label: 'Age',
             icon: Calendar,
             color: 'blue',
             isActive: (p) => {
@@ -366,7 +366,7 @@ const PersonDetail = () => {
         },
         {
             id: 'group',
-            label: 'Affiliation / Group',
+            label: 'Group',
             icon: Users,
             color: 'orange',
             isActive: (p) => p.group_id || p.group_name,
@@ -380,7 +380,7 @@ const PersonDetail = () => {
         },
         {
             id: 'gender',
-            label: 'Bio-Type / Gender',
+            label: 'Gender',
             icon: Users,
             color: 'purple',
             isActive: (p) => {
@@ -415,7 +415,7 @@ const PersonDetail = () => {
         },
         {
             id: 'aliases',
-            label: 'Codenames / Aliases',
+            label: 'Alias',
             icon: Users,
             color: 'blue',
             fullWidth: true,
@@ -483,7 +483,7 @@ const PersonDetail = () => {
         },
         {
             id: 'partners',
-            label: 'Interpersonal Bonds / Partners',
+            label: 'Partners',
             icon: Heart,
             color: 'red',
             fullWidth: true,
@@ -526,7 +526,7 @@ const PersonDetail = () => {
         },
         {
             id: 'social',
-            label: 'Extended Network / Social',
+            label: 'Social',
             icon: Users,
             color: 'blue',
             fullWidth: true,
@@ -609,7 +609,7 @@ const PersonDetail = () => {
         },
         {
             id: 'additional_info',
-            label: 'Notes / Intelligence Brief',
+            label: 'Notes',
             icon: Info,
             color: 'purple',
             fullWidth: true,
@@ -625,7 +625,7 @@ const PersonDetail = () => {
         },
         {
             id: 'online_profiles',
-            label: 'Digital Footprint / Profiles',
+            label: 'Profiles',
             icon: Globe,
             color: 'blue',
             fullWidth: true,

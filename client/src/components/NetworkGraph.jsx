@@ -48,6 +48,14 @@ const NetworkGraph = ({ data }) => {
         });
     }, [data.nodes, imgCache]);
 
+    // Effect to adjust physics forces
+    useEffect(() => {
+        if (fgRef.current) {
+            fgRef.current.d3Force('charge').strength(-400);
+            fgRef.current.d3Force('link').distance(70);
+        }
+    }, [data]);
+
     // Group links to handle multi-link label stacking
     const linksGrouped = useMemo(() => {
         const groups = {};
