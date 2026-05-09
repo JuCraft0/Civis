@@ -338,7 +338,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
             { id: 'additional_info', label: 'Zusätzliche Infos', icon: Plus }
         ],
         'Verbindungen': [
-            { id: 'group_id', label: 'Gruppe', icon: FolderTree },
+            { id: 'group_id', label: 'Cluster / Gruppen', icon: FolderTree },
             { id: 'family', label: 'Familie', icon: Users },
             { id: 'partners', label: 'Beziehung/Partner', icon: Users },
             { id: 'social', label: 'Soziales Umfeld', icon: Users },
@@ -587,7 +587,10 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
         if (!activeModules.includes('gender')) finalData.gender = '';
         if (!activeModules.includes('aliases')) finalData.aliases = '';
         if (!activeModules.includes('location')) finalData.location = '';
-        if (!activeModules.includes('group_id')) finalData.group_id = null;
+        if (!activeModules.includes('group_id')) {
+            finalData.group_id = null;
+            finalData.group_ids = [];
+        }
         if (!activeModules.includes('family')) finalData.family = [];
         if (!activeModules.includes('partners')) finalData.partners = [];
         if (!activeModules.includes('social')) finalData.social = [];
@@ -841,25 +844,6 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             </motion.div>
                         )}
 
-                        {activeModules.includes('group_id') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4">
-                                {renderRemoveButton('group_id')}
-                                <HUDSelect
-                                    label="Organisations-Einheit"
-                                    icon={Users}
-                                    value={formData.group_id}
-                                    onChange={(val) => setFormData(prev => ({ ...prev, group_id: val }))}
-                                    options={[
-                                        { value: "", label: "[KEINE ZUWEISUNG]" },
-                                        ...groups.map(g => ({
-                                            value: g.id,
-                                            label: g.full_path ? g.full_path.join(' > ').toUpperCase() : g.name.toUpperCase()
-                                        }))
-                                    ]}
-                                    color="blue"
-                                />
-                            </motion.div>
-                        )}
 
                         {activeModules.includes('gender') && (
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4 space-y-4">
