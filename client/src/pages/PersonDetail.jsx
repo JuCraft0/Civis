@@ -219,9 +219,13 @@ const PersonDetail = () => {
     const handleSetPrimaryPhoto = async (assetId) => {
         try {
             toast.success('Aktualisiere Profilbild...');
-            await setPrimaryPhoto(id, { assetId, source: 'immich' });
+            const response = await setPrimaryPhoto(id, { assetId, source: 'immich' });
+            if (response && response.data) {
+                setPerson(response.data);
+            } else {
+                fetchData();
+            }
             toast.success('Profilbild erfolgreich aktualisiert');
-            fetchData();
         } catch (error) {
             console.error("Set primary photo failed", error);
             toast.error('Fehler beim Aktualisieren des Profilbilds');

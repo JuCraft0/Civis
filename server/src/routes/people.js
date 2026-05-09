@@ -56,14 +56,14 @@ async function getFullPerson(personId) {
     person.social = relations.filter(r => r.type === 'Soziales Umfeld').map(r => ({ id: r.id, name: r.name, gender: r.gender, status: r.status }));
 
     const { rows: photos } = await pool.query('SELECT id, mime_type FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [personId]);
-    const urls = photos.map(ph => `/api/people/photo/${ph.id}`);
+    let urls = photos.map(ph => `/api/people/photo/${ph.id}`);
     
     // Ensure the primary photo is at index 0
     if (person.photo_url) {
-        const primaryIndex = urls.indexOf(person.photo_url);
-        if (primaryIndex > -1) {
-            urls.splice(primaryIndex, 1);
-            urls.unshift(person.photo_url);
+        if (urls.includes(person.photo_url)) {
+            urls = [person.photo_url, ...urls.filter(u => u !== person.photo_url)];
+        } else if (urls.length > 0) {
+            person.photo_url = urls[0];
         }
     } else if (urls.length > 0) {
         person.photo_url = urls[0];
@@ -140,13 +140,13 @@ router.get('/', authenticateToken, async (req, res) => {
 
         for (const p of rows) {
             const { rows: photos } = await pool.query('SELECT id FROM person_photos WHERE person_id = $1 ORDER BY id ASC', [p.id]);
-            const urls = photos.map(ph => `/api/people/photo/${ph.id}`);
+            let urls = photos.map(ph => `/api/people/photo/${ph.id}`);
             
             if (p.photo_url) {
-                const primaryIndex = urls.indexOf(p.photo_url);
-                if (primaryIndex > -1) {
-                    urls.splice(primaryIndex, 1);
-                    urls.unshift(p.photo_url);
+                if (urls.includes(p.photo_url)) {
+                    urls = [p.photo_url, ...urls.filter(u => u !== p.photo_url)];
+                } else if (urls.length > 0) {
+                    p.photo_url = urls[0];
                 }
             } else if (urls.length > 0) {
                 p.photo_url = urls[0];
@@ -1372,6 +1372,10 @@ router.post('/:id/set-primary-photo', authenticateToken, async (req, res) => {
             console.error("Error processing image for primary photo:", e);
         }
 
+        // Reset old system-selected profile photos to prevent gallery bloat
+        // This ensures the new selection is the ONLY system-managed photo in the gallery
+        await pool.query('DELETE FROM person_photos WHERE person_id = $1 AND quality IS NOT NULL', [personId]);
+
         // Save to person_photos
         const result = await run(
             'INSERT INTO person_photos (person_id, photo_data, mime_type, quality, quality_details) VALUES (?, ?, ?, ?, ?)',
@@ -1385,7 +1389,9 @@ router.post('/:id/set-primary-photo', authenticateToken, async (req, res) => {
             [`/api/people/photo/${newPhotoId}`, ai_metadata, personId]
         );
 
-        res.json({ message: "Profilbild aktualisiert", photoUrl: `/api/people/photo/${newPhotoId}` });
+        // Fetch the full updated person object to be absolutely sure
+        const updatedPerson = await getFullPerson(personId);
+        res.json({ message: "Profilbild erfolgreich aktualisiert", data: updatedPerson });
     } catch (err) {
         console.error("set-primary-photo error:", err);
         res.status(500).json({ error: err.message });
