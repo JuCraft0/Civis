@@ -469,9 +469,9 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
             }
         }
 
-        // Sort by distance and take top 15 candidates
+        // Sort by distance and take top candidates (Reduced to 8 for better CPU performance)
         candidates.sort((a, b) => a.stage1Distance - b.stage1Distance);
-        const topCandidates = candidates.slice(0, 15);
+        const topCandidates = candidates.slice(0, 8);
 
         // ── Stage 2: Precise verification against multiple photos ──────────────
         const matches = [];
@@ -494,19 +494,24 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
                     continue;
                 }
 
+                // Parallelize testing against multiple photos for this candidate
+                const verificationPromises = photos.map(async (photo) => {
+                    try {
+                        return await verifyFaces(req.file.buffer, photo.photo_data);
+                    } catch (innerErr) {
+                        return null;
+                    }
+                });
+
+                const results = await Promise.all(verificationPromises);
+                
                 let bestVerifyResult = null;
                 let minDistance = Infinity;
 
-                // Test against multiple photos and pick the best match
-                for (const photo of photos) {
-                    try {
-                        const verifyResult = await verifyFaces(req.file.buffer, photo.photo_data);
-                        if (verifyResult && verifyResult.distance < minDistance) {
-                            minDistance = verifyResult.distance;
-                            bestVerifyResult = verifyResult;
-                        }
-                    } catch (innerErr) {
-                        // Ignore individual photo processing errors
+                for (const verifyResult of results) {
+                    if (verifyResult && verifyResult.distance < minDistance) {
+                        minDistance = verifyResult.distance;
+                        bestVerifyResult = verifyResult;
                     }
                 }
 
