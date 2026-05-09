@@ -165,7 +165,7 @@ const RelationSection = ({
                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            className="absolute z-[60] w-full mt-3 glass-panel rounded-2xl shadow-3xl overflow-hidden border border-white/10 p-1.5"
+                            className="absolute z-[60] w-full mt-3 glass-panel rounded-2xl shadow-2xl overflow-hidden border border-white/10 p-1.5"
                         >
                             {suggestions.length > 0 ? (
                                 suggestions.map(p => (
@@ -633,7 +633,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            className="absolute z-[100] w-[280px] md:w-[600px] right-0 mt-3 glass-panel rounded-2xl shadow-3xl border border-white/10 overflow-hidden backdrop-blur-3xl p-2"
+                            className="absolute z-[100] w-[280px] md:w-[600px] right-0 mt-3 glass-panel rounded-2xl shadow-2xl border border-white/10 overflow-hidden p-2"
                         >
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
                                 {Object.entries(moduleCategories).map(([category, modules]) => {
@@ -680,7 +680,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
             </div>
 
             {/* Main Form Content */}
-            <div className="glass-panel rounded-3xl border border-white/5 p-8 shadow-3xl relative overflow-hidden">
+            <div className="glass-panel rounded-3xl border border-white/5 p-8 shadow-2xl relative overflow-hidden">
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 opacity-30"></div>
                 
                 <div className="space-y-10 relative">
@@ -1196,7 +1196,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             initial={{ opacity: 0, scale: 0.9, y: 40 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 40 }}
-                            className="glass-panel border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] shadow-3xl relative z-[201]"
+                            className="glass-panel border border-white/10 rounded-[2.5rem] w-full max-w-2xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl relative z-[201]"
                         >
                             <div className="p-8 border-b border-white/5 flex items-center justify-between bg-black/20">
                                 <div className="flex items-center gap-4">
