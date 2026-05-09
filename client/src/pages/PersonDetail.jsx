@@ -692,7 +692,7 @@ const PersonDetail = () => {
         <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="min-h-screen bg-obsidian text-white selection:bg-blue-500/30 p-4 md:p-12 relative overflow-hidden"
+            className="min-h-screen bg-obsidian text-white selection:bg-blue-500/30 p-4 md:p-12 relative overflow-visible"
         >
             {/* Global Ambient Accents */}
             <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0">

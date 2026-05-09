@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Plus, Search, Loader, LogOut, Shield, Users, FolderTree, Trash2, Edit3, ChevronRight, ChevronDown, LayoutGrid, ArrowRight, Share2, Scan, Database, UserX } from 'lucide-react';
+import { Plus, Search, Loader, LogOut, Shield, Users, FolderTree, Trash2, Edit3, ChevronRight, ChevronDown, LayoutGrid, ArrowRight, Share2, Scan, Database, UserX, UserPlus, ShieldCheck } from 'lucide-react';
 import PersonCard from '../components/PersonCard';
 import PersonForm from '../components/PersonForm';
 import UserForm from '../components/UserForm';
@@ -935,7 +935,7 @@ const Dashboard = () => {
                                 initial={{ opacity: 0, scale: 0.95, y: 20 }} 
                                 animate={{ opacity: 1, scale: 1, y: 0 }} 
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-                                className="glass-panel p-8 md:p-10 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+                                className="glass-panel p-8 md:p-10 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] relative"
                             >
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
                                 
@@ -1022,7 +1022,7 @@ const Dashboard = () => {
                                 initial={{ opacity: 0, scale: 0.95, y: 20 }} 
                                 animate={{ opacity: 1, scale: 1, y: 0 }} 
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-                                className="glass-panel p-8 md:p-10 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+                                className="glass-panel p-8 md:p-10 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] relative"
                             >
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
                                 
@@ -1052,7 +1052,7 @@ const Dashboard = () => {
                                 initial={{ opacity: 0, scale: 0.95, y: 20 }} 
                                 animate={{ opacity: 1, scale: 1, y: 0 }} 
                                 exit={{ opacity: 0, scale: 0.95, y: 20 }} 
-                                className="glass-panel p-8 md:p-10 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden"
+                                className="glass-panel p-8 md:p-10 w-full max-w-lg shadow-[0_0_50px_rgba(0,0,0,0.5)] relative"
                             >
                                 <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/5 rounded-full blur-[100px] -mr-32 -mt-32 pointer-events-none" />
                                 

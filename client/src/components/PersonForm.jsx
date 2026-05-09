@@ -90,7 +90,7 @@ const InlineStatusSelect = ({ value, options, onChange, colorClass }) => {
                         initial={{ opacity: 0, y: -5, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -5, scale: 0.95 }}
-                        className="absolute right-0 top-full mt-1 z-50 bg-[#121214] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px]"
+                        className="absolute right-0 top-full mt-1 z-[9999] bg-[#121214] border border-white/10 rounded-xl shadow-2xl overflow-hidden min-w-[160px]"
                     >
                         <div className="max-h-48 overflow-y-auto">
                             {options.map(opt => (
@@ -168,7 +168,7 @@ const RelationSection = ({
                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            className="absolute z-[60] w-full mt-3 glass-panel rounded-2xl shadow-2xl overflow-hidden border border-white/10 p-1.5"
+                            className="absolute z-[9999] w-full mt-3 glass-panel rounded-2xl shadow-2xl overflow-hidden border border-white/10 p-1.5"
                         >
                             {suggestions.length > 0 ? (
                                 suggestions.map(p => (
@@ -945,7 +945,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: 10 }}
-                                                className="absolute z-50 w-full mt-2 glass-panel rounded-xl shadow-2xl border border-white/10 overflow-hidden bg-[#0a0a0c]"
+                                                className="absolute z-[9999] w-full mt-2 glass-panel rounded-xl shadow-2xl border border-white/10 overflow-hidden bg-[#0a0a0c]"
                                             >
                                                 {addressSuggestions.map((suggestion, idx) => (
                                                     <button

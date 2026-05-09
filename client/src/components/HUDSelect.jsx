@@ -80,7 +80,7 @@ const HUDSelect = ({
                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            className="absolute z-[100] w-full mt-3 glass-panel rounded-2xl shadow-3xl overflow-hidden border border-white/10"
+                            className="absolute z-[9999] w-full mt-3 glass-panel rounded-2xl shadow-3xl overflow-hidden border border-white/10"
                         >
                             <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5">
                                 {options.length > 0 ? options.map((opt) => (
