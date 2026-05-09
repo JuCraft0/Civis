@@ -61,9 +61,10 @@ const HUDSelect = ({
                     className={`
                         w-full glass-panel rounded-2xl px-5 py-3.5 
                         text-white cursor-pointer transition-all flex items-center justify-between
-                        border border-white/5 hover:border-white/20
+                        border border-white/5 hover:border-white/20 outline-none
                         ${isOpen ? 'ring-1 ring-white/10 border-white/30' : ''} shadow-2xl
                     `}
+                    tabIndex={0}
                 >
                     <div className="flex items-center gap-4 min-w-0">
                         {Icon && <Icon className={`${selectedOption ? theme.activeText : 'text-gray-500'} shrink-0 transition-colors`} size={18} />}

@@ -218,7 +218,7 @@ const RelationSection = ({
                         <motion.div
                             layout
                             key={relation.name}
-                            className={`relative z-0 focus-within:z-20 px-4 py-2.5 glass-panel border rounded-xl text-[10px] font-mono flex items-center justify-between group transition-all hover:border-white/10 ${colorClass.split(' ')[0]}`}
+                            className={`relative z-0 focus-within:z-[100] px-4 py-2.5 glass-panel border rounded-xl text-[10px] font-mono flex items-center justify-between group transition-all hover:border-white/10 ${colorClass.split(' ')[0]}`}
                         >
                             <div className="flex items-center gap-3">
                                 {isLinked ? (
@@ -732,7 +732,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
 
                     <AnimatePresence mode="popLayout">
                         {activeModules.includes('photo') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-4">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4">
                                 {renderRemoveButton('photo')}
                                 <div className="flex items-center justify-between mb-6">
                                     <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] px-1">Biometrische Erfassung (Max. 5)</label>
@@ -842,7 +842,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         )}
 
                         {activeModules.includes('group_id') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-4">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4">
                                 {renderRemoveButton('group_id')}
                                 <HUDSelect
                                     label="Organisations-Einheit"
@@ -862,7 +862,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         )}
 
                         {activeModules.includes('gender') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-4 space-y-4">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4 space-y-4">
                                 {renderRemoveButton('gender')}
                                 <HUDSelect
                                     label="Physisches Geschlecht"
@@ -903,7 +903,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         )}
 
                         {activeModules.includes('aliases') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-4">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4">
                                 {renderRemoveButton('aliases')}
                                 <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Alias / Codenamen</label>
                                 <div className="relative group">
@@ -920,7 +920,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         )}
 
                         {activeModules.includes('location') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-4">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-4">
                                 {renderRemoveButton('location')}
                                 <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Primärer Aufenthaltsort</label>
                                 <div className="relative group">
@@ -969,7 +969,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         )}
 
                         {activeModules.includes('group_id') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-6">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-6">
                                 {renderRemoveButton('group_id')}
                                 <HUDMultiSelect
                                     label="Cluster (Mehrfachauswahl möglich)"
@@ -984,7 +984,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
 
                         {/* Family Section */}
                         {activeModules.includes('family') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-6">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-6">
                                 {renderRemoveButton('family')}
                                 <RelationSection
                                     label="Blutsverwandtschaft & Familie"
@@ -1008,7 +1008,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
 
                         {/* Partners Section */}
                         {activeModules.includes('partners') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-6">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-6">
                                 {renderRemoveButton('partners')}
                                 <RelationSection
                                     label="Romantische Beziehungen"
@@ -1032,7 +1032,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
 
                         {/* Social Section */}
                         {activeModules.includes('social') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-6">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-6">
                                 {renderRemoveButton('social')}
                                 <RelationSection
                                     label="Soziale Netzwerk-Verknüpfungen"
@@ -1056,7 +1056,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
 
                         {/* Online Profiles Section */}
                         {activeModules.includes('online_profiles') && (
-                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-10 group pt-6 space-y-6">
+                            <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-50 group pt-6 space-y-6">
                                 {renderRemoveButton('online_profiles')}
                                 <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block px-1">Digital Footprint / Online-Profile</label>
 
