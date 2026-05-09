@@ -633,7 +633,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            className="absolute z-[100] w-full mt-3 glass-panel rounded-2xl shadow-3xl border border-white/10 overflow-hidden backdrop-blur-3xl p-2"
+                            className="absolute z-[100] w-[280px] md:w-[600px] right-0 mt-3 glass-panel rounded-2xl shadow-3xl border border-white/10 overflow-hidden backdrop-blur-3xl p-2"
                         >
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-1">
                                 {Object.entries(moduleCategories).map(([category, modules]) => {
