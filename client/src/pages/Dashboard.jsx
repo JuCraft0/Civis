@@ -275,6 +275,7 @@ const Dashboard = () => {
         if (activeTab === 'people' || activeTab === 'network') fetchPeople();
     }, [activeTab, user]);
 
+    const [reindexing, setReindexing] = useState(false);
     const [maintenanceProgress, setMaintenanceProgress] = useState({ active: false, current: 0, total: 0, status: '' });
 
     useEffect(() => {

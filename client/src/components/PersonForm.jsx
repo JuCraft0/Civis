@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getPerson, updatePerson, deletePerson, uploadPhoto, deletePhoto, getGroups, getPeople } from '../services/api';
 import HUDSelect from './HUDSelect';
-import { Calendar as CalendarIcon, Save, X, Users, Search, UserPlus, UserMinus, Plus, Image as ImageIcon, Upload, ChevronDown, Globe, Trash2, Scan, Check } from 'lucide-react';
+import { Calendar as CalendarIcon, Save, X, Users, Search, UserPlus, UserMinus, Plus, Image as ImageIcon, Upload, ChevronDown, Globe, Trash2, Scan, Check, MapPin, Clock } from 'lucide-react';
 import { analyzeFace, getImmichPeople } from '../services/api';
 import axios from 'axios';
 
@@ -650,7 +650,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                                                         type="button"
                                                         onClick={() => {
                                                             toggleModule(module.id);
-                                                            setShowModuleList(false);
+                                                            setShowAddMenu(false);
                                                         }}
                                                         className="w-full flex items-center gap-4 px-4 py-3 hover:bg-white/5 rounded-xl transition-all text-left group border border-transparent hover:border-white/5"
                                                     >
