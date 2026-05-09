@@ -19,15 +19,28 @@ const run = async (sql, params = []) => {
 
     // For INSERT statements, we might need RETURNING id to mimic lastID
     let modifiedSql = pgSql;
-    if (modifiedSql.trim().toUpperCase().startsWith('INSERT')) {
+    const isInsert = modifiedSql.trim().toUpperCase().startsWith('INSERT');
+    if (isInsert && !modifiedSql.toUpperCase().includes('RETURNING')) {
         modifiedSql += ' RETURNING id';
     }
 
-    const { rows, rowCount } = await pool.query(modifiedSql, params);
-    return {
-        lastID: rows.length > 0 ? rows[0].id : null,
-        changes: rowCount
-    };
+    try {
+        const { rows, rowCount } = await pool.query(modifiedSql, params);
+        return {
+            lastID: rows.length > 0 ? (rows[0].id || null) : null,
+            changes: rowCount
+        };
+    } catch (err) {
+        // If the error is about a missing "id" column and we added "RETURNING id", retry without it
+        if (isInsert && err.message.includes('column "id" does not exist') && modifiedSql.endsWith(' RETURNING id')) {
+            const { rowCount } = await pool.query(pgSql, params);
+            return {
+                lastID: null,
+                changes: rowCount
+            };
+        }
+        throw err;
+    }
 };
 
 const get = async (sql, params = []) => {
