@@ -203,3 +203,8 @@ export const searchAddress = async (query) => {
         return [];
     }
 };
+
+export const getEvaluations = async (personId) => {
+    const response = await api.get(`/evaluations/person/${personId}`);
+    return response.data;
+};

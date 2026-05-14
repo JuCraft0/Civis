@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/Dashboard';
 import PersonDetail from './pages/PersonDetail';
 import Login from './pages/Login';
+import Evaluation from './pages/Evaluation';
 import { AnimatePresence } from 'framer-motion';
 
 import { Toaster } from 'react-hot-toast';
@@ -45,6 +46,11 @@ const App = () => {
             <Route path="/person/:id" element={
               <ProtectedRoute>
                 <PersonDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="/evaluation" element={
+              <ProtectedRoute>
+                <Evaluation />
               </ProtectedRoute>
             } />
           </Routes>

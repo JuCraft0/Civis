@@ -1,0 +1,502 @@
+[
+  {
+    "id": 1,
+    "text": "Experimentierfreudigkeit",
+    "weight": 1.2
+  },
+  {
+    "id": 2,
+    "text": "Abstraktes Denken",
+    "weight": 1.3
+  },
+  {
+    "id": 3,
+    "text": "Kreative Vorstellungskraft",
+    "weight": 1.1
+  },
+  {
+    "id": 4,
+    "text": "Kulturelles Interesse",
+    "weight": 0.9
+  },
+  {
+    "id": 5,
+    "text": "Routinepräferenz (UMGEKEHRT)",
+    "weight": 1
+  },
+  {
+    "id": 6,
+    "text": "Planungsorientierung",
+    "weight": 1.4
+  },
+  {
+    "id": 7,
+    "text": "Detailorientierung",
+    "weight": 1.3
+  },
+  {
+    "id": 8,
+    "text": "Zuverlässigkeit/Pünktlichkeit",
+    "weight": 1.5
+  },
+  {
+    "id": 9,
+    "text": "Organisationsgrad",
+    "weight": 1.2
+  },
+  {
+    "id": 10,
+    "text": "Prokrastination (UMGEKEHRT)",
+    "weight": 1.4
+  },
+  {
+    "id": 11,
+    "text": "Soziale Energie",
+    "weight": 1.5
+  },
+  {
+    "id": 12,
+    "text": "Kontaktfreudigkeit",
+    "weight": 1.3
+  },
+  {
+    "id": 13,
+    "text": "Aufmerksamkeitsbedürfnis",
+    "weight": 1
+  },
+  {
+    "id": 14,
+    "text": "Alleinzeit-Bedürfnis (UMGEKEHRT für Extraversion)",
+    "weight": 1.4
+  },
+  {
+    "id": 15,
+    "text": "Kontaktinitiation",
+    "weight": 1.2
+  },
+  {
+    "id": 16,
+    "text": "Konfliktharmonie",
+    "weight": 1.3
+  },
+  {
+    "id": 17,
+    "text": "Hilfsbereitschaft",
+    "weight": 1.4
+  },
+  {
+    "id": 18,
+    "text": "Vertrauensneigung",
+    "weight": 1.1
+  },
+  {
+    "id": 19,
+    "text": "Direktheit (UMGEKEHRT für Verträglichkeit)",
+    "weight": 1.2
+  },
+  {
+    "id": 20,
+    "text": "Selbstlosigkeit",
+    "weight": 1
+  },
+  {
+    "id": 21,
+    "text": "Zeitdruck-Motivation",
+    "weight": 1.2
+  },
+  {
+    "id": 22,
+    "text": "Multitasking-Präferenz",
+    "weight": 1.1
+  },
+  {
+    "id": 23,
+    "text": "Anweisungsbedürfnis",
+    "weight": 1.3
+  },
+  {
+    "id": 24,
+    "text": "Eigenständigkeit",
+    "weight": 1.5
+  },
+  {
+    "id": 25,
+    "text": "Extrinsische Motivation",
+    "weight": 1
+  },
+  {
+    "id": 26,
+    "text": "Intrinsische Motivation",
+    "weight": 1.2
+  },
+  {
+    "id": 27,
+    "text": "Zielhöhe/Perfektionismus",
+    "weight": 1.1
+  },
+  {
+    "id": 28,
+    "text": "\"Gut genug\"-Akzeptanz",
+    "weight": 0.9
+  },
+  {
+    "id": 29,
+    "text": "Ablenkbarkeit",
+    "weight": 1.3
+  },
+  {
+    "id": 30,
+    "text": "Konzentrationsfähigkeit",
+    "weight": 1.4
+  },
+  {
+    "id": 31,
+    "text": "Verantwortungsbereitschaft",
+    "weight": 1.5
+  },
+  {
+    "id": 32,
+    "text": "Teampräferenz",
+    "weight": 1.1
+  },
+  {
+    "id": 33,
+    "text": "Praktisches Lernen",
+    "weight": 1
+  },
+  {
+    "id": 34,
+    "text": "Theoretisches Lernen",
+    "weight": 1
+  },
+  {
+    "id": 35,
+    "text": "Feedback-Bedürfnis",
+    "weight": 1.2
+  },
+  {
+    "id": 36,
+    "text": "Aktives Zuhören",
+    "weight": 1.5
+  },
+  {
+    "id": 37,
+    "text": "Direkte Kommunikation",
+    "weight": 1.2
+  },
+  {
+    "id": 38,
+    "text": "Nonverbale Wahrnehmung",
+    "weight": 1.3
+  },
+  {
+    "id": 39,
+    "text": "Schriftliche Kommunikationspräferenz",
+    "weight": 0.9
+  },
+  {
+    "id": 40,
+    "text": "Perspektivenübernahme/Empathie",
+    "weight": 1.6
+  },
+  {
+    "id": 41,
+    "text": "Soziale Initiative",
+    "weight": 1.2
+  },
+  {
+    "id": 42,
+    "text": "Small-Talk-Unbehagen",
+    "weight": 1
+  },
+  {
+    "id": 43,
+    "text": "Kommunikationsanpassung",
+    "weight": 1.4
+  },
+  {
+    "id": 44,
+    "text": "Diskussionsdominanz",
+    "weight": 1.1
+  },
+  {
+    "id": 45,
+    "text": "Tiefgründigkeit",
+    "weight": 1.1
+  },
+  {
+    "id": 46,
+    "text": "Informationsselektivität",
+    "weight": 1
+  },
+  {
+    "id": 47,
+    "text": "Humornutzung",
+    "weight": 0.9
+  },
+  {
+    "id": 48,
+    "text": "Gruppengröße-Präferenz",
+    "weight": 1
+  },
+  {
+    "id": 49,
+    "text": "Stimmungswahrnehmung",
+    "weight": 1.3
+  },
+  {
+    "id": 50,
+    "text": "Feedback-Stil",
+    "weight": 1.2
+  },
+  {
+    "id": 51,
+    "text": "Entscheidungsgeschwindigkeit/Intuition",
+    "weight": 1.2
+  },
+  {
+    "id": 52,
+    "text": "Analytisches Entscheiden",
+    "weight": 1.4
+  },
+  {
+    "id": 53,
+    "text": "Beratungssuche",
+    "weight": 1
+  },
+  {
+    "id": 54,
+    "text": "Verantwortungsübernahme",
+    "weight": 1.5
+  },
+  {
+    "id": 55,
+    "text": "Entscheidungsreue",
+    "weight": 1.1
+  },
+  {
+    "id": 56,
+    "text": "Datenbasierte Entscheidungen",
+    "weight": 1.3
+  },
+  {
+    "id": 57,
+    "text": "Werte-/Emotionsbasierte Entscheidungen",
+    "weight": 1.2
+  },
+  {
+    "id": 58,
+    "text": "Risikobereitschaft",
+    "weight": 1.3
+  },
+  {
+    "id": 59,
+    "text": "Sicherheitspräferenz",
+    "weight": 1.1
+  },
+  {
+    "id": 60,
+    "text": "Unsicherheitstoleranz",
+    "weight": 1.4
+  },
+  {
+    "id": 61,
+    "text": "Problemwahrnehmung",
+    "weight": 1.2
+  },
+  {
+    "id": 62,
+    "text": "Systematisches Denken",
+    "weight": 1.3
+  },
+  {
+    "id": 63,
+    "text": "Kreative Lösungen",
+    "weight": 1.4
+  },
+  {
+    "id": 64,
+    "text": "Aufgabehartnäckigkeit",
+    "weight": 1.2
+  },
+  {
+    "id": 65,
+    "text": "Expertensuchendes Verhalten",
+    "weight": 1.1
+  },
+  {
+    "id": 66,
+    "text": "Stressresilienz",
+    "weight": 1.6
+  },
+  {
+    "id": 67,
+    "text": "Emotionale Reaktivität (UMGEKEHRT für Stabilität)",
+    "weight": 1.4
+  },
+  {
+    "id": 68,
+    "text": "Bewältigungsstrategien",
+    "weight": 1.5
+  },
+  {
+    "id": 69,
+    "text": "Stressbeeinträchtigung (UMGEKEHRT)",
+    "weight": 1.3
+  },
+  {
+    "id": 70,
+    "text": "Emotionale Kontrolle",
+    "weight": 1.3
+  },
+  {
+    "id": 71,
+    "text": "Emotionale Offenheit",
+    "weight": 1.1
+  },
+  {
+    "id": 72,
+    "text": "Erholungsfähigkeit",
+    "weight": 1.5
+  },
+  {
+    "id": 73,
+    "text": "Sorgenneigung (UMGEKEHRT)",
+    "weight": 1.2
+  },
+  {
+    "id": 74,
+    "text": "Aktive Stressbewältigung",
+    "weight": 1.3
+  },
+  {
+    "id": 75,
+    "text": "Problemverdrängung (UMGEKEHRT)",
+    "weight": 1.4
+  },
+  {
+    "id": 76,
+    "text": "Führungsbereitschaft",
+    "weight": 1.5
+  },
+  {
+    "id": 77,
+    "text": "Follower-Präferenz (UMGEKEHRT für Führung)",
+    "weight": 1.2
+  },
+  {
+    "id": 78,
+    "text": "Motivationsfähigkeit",
+    "weight": 1.4
+  },
+  {
+    "id": 79,
+    "text": "Delegationsfähigkeit",
+    "weight": 1.3
+  },
+  {
+    "id": 80,
+    "text": "Kontrollbedürfnis (UMGEKEHRT für Delegation)",
+    "weight": 1.2
+  },
+  {
+    "id": 81,
+    "text": "Stärkenerkennung",
+    "weight": 1.4
+  },
+  {
+    "id": 82,
+    "text": "Feedback-Kompetenz",
+    "weight": 1.5
+  },
+  {
+    "id": 83,
+    "text": "Führung durch Vorbild",
+    "weight": 1.3
+  },
+  {
+    "id": 84,
+    "text": "Partizipative Führung",
+    "weight": 1.2
+  },
+  {
+    "id": 85,
+    "text": "Entscheidungsstärke",
+    "weight": 1.4
+  },
+  {
+    "id": 86,
+    "text": "Integrität",
+    "weight": 1.6
+  },
+  {
+    "id": 87,
+    "text": "Prinzipientreue",
+    "weight": 1.4
+  },
+  {
+    "id": 88,
+    "text": "Wertekompromissbereitschaft (UMGEKEHRT)",
+    "weight": 1.3
+  },
+  {
+    "id": 89,
+    "text": "Gerechtigkeitsorientierung",
+    "weight": 1.4
+  },
+  {
+    "id": 90,
+    "text": "Soziales/Ökologisches Engagement",
+    "weight": 1.2
+  },
+  {
+    "id": 91,
+    "text": "Traditionsorientierung",
+    "weight": 1
+  },
+  {
+    "id": 92,
+    "text": "Kritisches Hinterfragen",
+    "weight": 1.3
+  },
+  {
+    "id": 93,
+    "text": "Diversitätsrespekt",
+    "weight": 1.5
+  },
+  {
+    "id": 94,
+    "text": "Loyalität",
+    "weight": 1.2
+  },
+  {
+    "id": 95,
+    "text": "Selbstpriorisierung",
+    "weight": 1.1
+  },
+  {
+    "id": 96,
+    "text": "Anpassungsgeschwindigkeit",
+    "weight": 1.5
+  },
+  {
+    "id": 97,
+    "text": "Veränderungsangst (UMGEKEHRT)",
+    "weight": 1.3
+  },
+  {
+    "id": 98,
+    "text": "Entwicklungsorientierung",
+    "weight": 1.4
+  },
+  {
+    "id": 99,
+    "text": "Planflexibilität",
+    "weight": 1.3
+  },
+  {
+    "id": 100,
+    "text": "Anpassungszeit",
+    "weight": 1.2
+  }
+]

@@ -162,6 +162,15 @@ async function initDB(retries = 5) {
             CONSTRAINT fk_person_groups_group FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
         )`);
 
+        await pool.query(`CREATE TABLE IF NOT EXISTS evaluations (
+            id SERIAL PRIMARY KEY,
+            person_id INTEGER NOT NULL,
+            answers_json TEXT NOT NULL,
+            results_json TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_eval_person FOREIGN KEY (person_id) REFERENCES people(id) ON DELETE CASCADE
+        )`);
+
         // Migration: Move existing group_id from people to person_groups
         const { rows: existingLinks } = await pool.query("SELECT id, group_id FROM people WHERE group_id IS NOT NULL");
         for (const link of existingLinks) {

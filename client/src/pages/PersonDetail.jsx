@@ -5,10 +5,11 @@ import { ArrowLeft, Trash2, User, Calendar, Users, Edit3, Loader, Info, Heart, P
 import PersonForm from '../components/PersonForm';
 import ConfirmationModal from '../components/ConfirmationModal';
 import { toast } from 'react-hot-toast';
-import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces, setPrimaryPhoto, resetProfilePhoto } from '../services/api';
+import { getPerson, updatePerson, deletePerson, uploadPhoto, syncImmichPerson, getImmichFaces, setPrimaryPhoto, resetProfilePhoto, getEvaluations } from '../services/api';
 import { getGenderedStatus } from '../utils/statusHelpers';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+import EvaluationDisplay from '../components/EvaluationDisplay';
 
 const AuthenticatedImage = ({ src, alt, className }) => {
     const [imageSrc, setImageSrc] = useState(null);
@@ -131,12 +132,22 @@ const PersonDetail = () => {
     const [focusedModule, setFocusedModule] = useState(null);
     const [isSyncing, setIsSyncing] = useState(false);
     const [immichFaces, setImmichFaces] = useState([]);
+    const [evaluations, setEvaluations] = useState([]);
 
     const fetchData = async () => {
         try {
             setLoading(true);
             const data = await getPerson(id);
             setPerson(data.data);
+            
+            try {
+                const evalData = await getEvaluations(id);
+                if (evalData && evalData.data) {
+                    setEvaluations(evalData.data);
+                }
+            } catch (evalErr) {
+                console.error("Failed to fetch evaluations", evalErr);
+            }
             
             if (data.data.immich_person_id) {
                 try {
@@ -683,6 +694,28 @@ const PersonDetail = () => {
             fullWidth: true,
             isActive: (p) => immichFaces && immichFaces.length > 0,
             render: (p) => <ImmichFacesModule personId={p.id} faces={immichFaces} onSetPrimary={handleSetPrimaryPhoto} />
+        },
+        {
+            id: 'evaluations',
+            label: 'Psych-Evaluation Profile',
+            icon: Brain,
+            color: 'blue',
+            fullWidth: true,
+            isActive: (p) => true,
+            render: (p) => (
+                <div className="w-full">
+                    <EvaluationDisplay evaluations={evaluations} />
+                    <div className="mt-6 flex justify-end">
+                        <button 
+                            onClick={() => navigate('/evaluation')}
+                            className="glass-button px-6 py-3 font-black text-[10px] uppercase tracking-widest text-blue-400 hover:text-blue-300"
+                        >
+                            <Brain size={14} className="inline mr-2" />
+                            Neue Evaluierung starten
+                        </button>
+                    </div>
+                </div>
+            )
         }
     ];
 
