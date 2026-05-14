@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import { getPeople, getEvaluationsQuestions, saveEvaluation } from '../services/api';
 import toast from 'react-hot-toast';
 
 const Evaluation = () => {
@@ -16,11 +16,11 @@ const Evaluation = () => {
     const fetchData = async () => {
       try {
         const [peopleRes, qRes] = await Promise.all([
-          api.get('/people'),
-          api.get('/evaluations/questions')
+          getPeople(),
+          getEvaluationsQuestions()
         ]);
-        setPeople(peopleRes.data.data);
-        setQuestions(qRes.data.data);
+        setPeople(peopleRes.data);
+        setQuestions(qRes.data);
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Fehler beim Laden der Daten');
@@ -50,7 +50,7 @@ const Evaluation = () => {
     }
 
     try {
-      await api.post(`/evaluations/person/${selectedPerson}`, { answers });
+      await saveEvaluation(selectedPerson, answers);
       toast.success('Evaluierung erfolgreich gespeichert!');
       navigate(`/person/${selectedPerson}`);
     } catch (error) {
@@ -95,10 +95,10 @@ const Evaluation = () => {
               <span>Fortschritt: {Object.keys(answers).length} / {questions.length}</span>
             </div>
 
-            <div className="w-full bg-slate-800 rounded-full h-2 mb-8">
+              <div className="w-full bg-slate-800 rounded-full h-2 mb-8">
               <div 
                 className="bg-gradient-to-r from-blue-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: \`\${(Object.keys(answers).length / questions.length) * 100}%\` }}
+                style={{ width: `${(Object.keys(answers).length / questions.length) * 100}%` }}
               ></div>
             </div>
 
@@ -112,11 +112,11 @@ const Evaluation = () => {
                       <button
                         key={val}
                         onClick={() => handleAnswer(q.id, val)}
-                        className={\`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200
-                          \${answers[q.id] === val 
+                        className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-sm font-medium transition-all duration-200
+                          ${answers[q.id] === val 
                             ? 'bg-blue-500 text-white shadow-[0_0_15px_rgba(59,130,246,0.5)] scale-110' 
                             : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-slate-200 hover:scale-105 border border-slate-700'
-                          }\`}
+                          }`}
                       >
                         {val}
                       </button>

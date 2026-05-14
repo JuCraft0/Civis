@@ -19,8 +19,8 @@ const ProgressBar = ({ label, value, max = 5 }) => {
       </div>
       <div className="w-full bg-slate-800 rounded-full h-2">
         <div 
-          className={\`bg-gradient-to-r \${color} h-2 rounded-full transition-all duration-1000 ease-out\`}
-          style={{ width: \`\${percentage}%\` }}
+          className={`bg-gradient-to-r ${color} h-2 rounded-full transition-all duration-1000 ease-out`}
+          style={{ width: `${percentage}%` }}
         ></div>
       </div>
     </div>

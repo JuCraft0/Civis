@@ -208,3 +208,13 @@ export const getEvaluations = async (personId) => {
     const response = await api.get(`/evaluations/person/${personId}`);
     return response.data;
 };
+
+export const getEvaluationsQuestions = async () => {
+    const response = await api.get(`/evaluations/questions`);
+    return response.data;
+};
+
+export const saveEvaluation = async (personId, answers) => {
+    const response = await api.post(`/evaluations/person/${personId}`, { answers });
+    return response.data;
+};
