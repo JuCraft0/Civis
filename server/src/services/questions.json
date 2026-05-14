@@ -1,502 +1,602 @@
 [
   {
     "id": 1,
-    "text": "Experimentierfreudigkeit",
+    "text": "Probierst du gerne Neues aus, auch wenn es ungewohnt ist?",
+    "description": "Experimentierfreudigkeit",
     "weight": 1.2
   },
   {
     "id": 2,
-    "text": "Abstraktes Denken",
+    "text": "Denkst du gerne über schwierige oder abstrakte Themen nach?",
+    "description": "Abstraktes Denken",
     "weight": 1.3
   },
   {
     "id": 3,
-    "text": "Kreative Vorstellungskraft",
+    "text": "Bist du kreativ und hast oft fantasievolle Ideen?",
+    "description": "Kreative Vorstellungskraft",
     "weight": 1.1
   },
   {
     "id": 4,
-    "text": "Kulturelles Interesse",
+    "text": "Interessierst du dich für Kunst, Kultur oder verschiedene Sichtweisen?",
+    "description": "Kulturelles Interesse",
     "weight": 0.9
   },
   {
     "id": 5,
-    "text": "Routinepräferenz (UMGEKEHRT)",
+    "text": "Bevorzugst du bekannte Abläufe statt neuer Experimente?",
+    "description": "Routinepräferenz (UMGEKEHRT)",
     "weight": 1
   },
   {
     "id": 6,
-    "text": "Planungsorientierung",
+    "text": "Planst du Aufgaben im Voraus und gehst strukturiert vor?",
+    "description": "Planungsorientierung",
     "weight": 1.4
   },
   {
     "id": 7,
-    "text": "Detailorientierung",
+    "text": "Achtehst du stark auf Genauigkeit und Details?",
+    "description": "Detailorientierung",
     "weight": 1.3
   },
   {
     "id": 8,
-    "text": "Zuverlässigkeit/Pünktlichkeit",
+    "text": "Bist du zuverlässig und hältst Termine meist ein?",
+    "description": "Zuverlässigkeit/Pünktlichkeit",
     "weight": 1.5
   },
   {
     "id": 9,
-    "text": "Organisationsgrad",
+    "text": "Bist du im Alltag oder bei der Arbeit ordentlich und organisiert?",
+    "description": "Organisationsgrad",
     "weight": 1.2
   },
   {
     "id": 10,
-    "text": "Prokrastination (UMGEKEHRT)",
+    "text": "Schiebst du Aufgaben oft auf oder handelst du eher spontan?",
+    "description": "Prokrastination (UMGEKEHRT)",
     "weight": 1.4
   },
   {
     "id": 11,
-    "text": "Soziale Energie",
+    "text": "Fühlst du dich in sozialen Situationen energiegeladen und lebendig?",
+    "description": "Soziale Energie",
     "weight": 1.5
   },
   {
     "id": 12,
-    "text": "Kontaktfreudigkeit",
+    "text": "Suchst du aktiv den Kontakt zu anderen Menschen?",
+    "description": "Kontaktfreudigkeit",
     "weight": 1.3
   },
   {
     "id": 13,
-    "text": "Aufmerksamkeitsbedürfnis",
+    "text": "Stehst du gerne im Mittelpunkt der Aufmerksamkeit?",
+    "description": "Aufmerksamkeitsbedürfnis",
     "weight": 1
   },
   {
     "id": 14,
-    "text": "Alleinzeit-Bedürfnis (UMGEKEHRT für Extraversion)",
+    "text": "Brauchst du regelmäßig Zeit für dich allein, um Energie zu tanken?",
+    "description": "Alleinzeit-Bedürfnis (UMGEKEHRT für Extraversion)",
     "weight": 1.4
   },
   {
     "id": 15,
-    "text": "Kontaktinitiation",
+    "text": "Sprichst du leicht mit Fremden und knüpfst schnell neue Kontakte?",
+    "description": "Kontaktinitiation",
     "weight": 1.2
   },
   {
     "id": 16,
-    "text": "Konfliktharmonie",
+    "text": "Versucht du Konflikte eher zu vermeiden und Kompromisse zu finden?",
+    "description": "Konfliktharmonie",
     "weight": 1.3
   },
   {
     "id": 17,
-    "text": "Hilfsbereitschaft",
+    "text": "Hilfst und unterstützt du andere gern?",
+    "description": "Hilfsbereitschaft",
     "weight": 1.4
   },
   {
     "id": 18,
-    "text": "Vertrauensneigung",
+    "text": "Vertraust du Menschen grundsätzlich und gehst vom Guten aus?",
+    "description": "Vertrauensneigung",
     "weight": 1.1
   },
   {
     "id": 19,
-    "text": "Direktheit (UMGEKEHRT für Verträglichkeit)",
+    "text": "Kannst du direkt und konfrontativ sein, wenn es nötig ist?",
+    "description": "Direktheit (UMGEKEHRT für Verträglichkeit)",
     "weight": 1.2
   },
   {
     "id": 20,
-    "text": "Selbstlosigkeit",
+    "text": "Stellst du oft die Bedürfnisse anderer über deine eigenen?",
+    "description": "Selbstlosigkeit",
     "weight": 1
   },
   {
     "id": 21,
-    "text": "Zeitdruck-Motivation",
+    "text": "Arbeitest du am besten unter Zeitdruck und mit klaren Deadlines?",
+    "description": "Zeitdruck-Motivation",
     "weight": 1.2
   },
   {
     "id": 22,
-    "text": "Multitasking-Präferenz",
+    "text": "Bearbeitest du gern mehrere Projekte gleichzeitig?",
+    "description": "Multitasking-Präferenz",
     "weight": 1.1
   },
   {
     "id": 23,
-    "text": "Anweisungsbedürfnis",
+    "text": "Brauchst du klare Anweisungen, bevor du mit einer Aufgabe beginnst?",
+    "description": "Anweisungsbedürfnis",
     "weight": 1.3
   },
   {
     "id": 24,
-    "text": "Eigenständigkeit",
+    "text": "Arbeitest du gern eigenständig ohne ständige Überwachung?",
+    "description": "Eigenständigkeit",
     "weight": 1.5
   },
   {
     "id": 25,
-    "text": "Extrinsische Motivation",
+    "text": "Motivierst du dich stark durch Geld, Anerkennung oder Status?",
+    "description": "Extrinsische Motivation",
     "weight": 1
   },
   {
     "id": 26,
-    "text": "Intrinsische Motivation",
+    "text": "Findest du Erfüllung in der Arbeit selbst, unabhängig von Belohnungen?",
+    "description": "Intrinsische Motivation",
     "weight": 1.2
   },
   {
     "id": 27,
-    "text": "Zielhöhe/Perfektionismus",
+    "text": "Setzt du dir hohe Ziele und strebst nach Perfektion?",
+    "description": "Zielhöhe/Perfektionismus",
     "weight": 1.1
   },
   {
     "id": 28,
-    "text": "\"Gut genug\"-Akzeptanz",
+    "text": "Bist du zufrieden, wenn etwas nur „gut genug“ ist?",
+    "description": "\"Gut genug\"-Akzeptanz",
     "weight": 0.9
   },
   {
     "id": 29,
-    "text": "Ablenkbarkeit",
+    "text": "Lässt du dich leicht durch Störungen oder Ablenkungen aus der Ruhe bringen?",
+    "description": "Ablenkbarkeit",
     "weight": 1.3
   },
   {
     "id": 30,
-    "text": "Konzentrationsfähigkeit",
+    "text": "Kannst du dich über lange Zeit auf eine Aufgabe konzentrieren?",
+    "description": "Konzentrationsfähigkeit",
     "weight": 1.4
   },
   {
     "id": 31,
-    "text": "Verantwortungsbereitschaft",
+    "text": "Übernimmst du gern Verantwortung für wichtige Entscheidungen?",
+    "description": "Verantwortungsbereitschaft",
     "weight": 1.5
   },
   {
     "id": 32,
-    "text": "Teampräferenz",
+    "text": "Arbeitest du lieber im Team als allein?",
+    "description": "Teampräferenz",
     "weight": 1.1
   },
   {
     "id": 33,
-    "text": "Praktisches Lernen",
+    "text": "Lernst du am besten durch praktisches Ausprobieren?",
+    "description": "Praktisches Lernen",
     "weight": 1
   },
   {
     "id": 34,
-    "text": "Theoretisches Lernen",
+    "text": "Lernst du eher theoretisch durch Lesen und Zuhören?",
+    "description": "Theoretisches Lernen",
     "weight": 1
   },
   {
     "id": 35,
-    "text": "Feedback-Bedürfnis",
+    "text": "Brauchst du regelmäßiges Feedback, um deine Leistung einzuschätzen?",
+    "description": "Feedback-Bedürfnis",
     "weight": 1.2
   },
   {
     "id": 36,
-    "text": "Aktives Zuhören",
+    "text": "Hörst du aufmerksam zu und lässt andere ausreden, bevor du antwortest?",
+    "description": "Aktives Zuhören",
     "weight": 1.5
   },
   {
     "id": 37,
-    "text": "Direkte Kommunikation",
+    "text": "Drückst du deine Gedanken und Gefühle klar und direkt aus?",
+    "description": "Direkte Kommunikation",
     "weight": 1.2
   },
   {
     "id": 38,
-    "text": "Nonverbale Wahrnehmung",
+    "text": "Achtehst du stark auf nonverbale Signale und Körpersprache?",
+    "description": "Nonverbale Wahrnehmung",
     "weight": 1.3
   },
   {
     "id": 39,
-    "text": "Schriftliche Kommunikationspräferenz",
+    "text": "Bevorzugst du schriftliche Kommunikation gegenüber mündlicher?",
+    "description": "Schriftliche Kommunikationspräferenz",
     "weight": 0.9
   },
   {
     "id": 40,
-    "text": "Perspektivenübernahme/Empathie",
+    "text": "Kannst du dich gut in die Perspektive anderer hineinversetzen?",
+    "description": "Perspektivenübernahme/Empathie",
     "weight": 1.6
   },
   {
     "id": 41,
-    "text": "Soziale Initiative",
+    "text": "Initiierst du oft Gespräche und soziale Aktivitäten?",
+    "description": "Soziale Initiative",
     "weight": 1.2
   },
   {
     "id": 42,
-    "text": "Small-Talk-Unbehagen",
+    "text": "Fühlst du dich unwohl, wenn du Small Talk machen musst?",
+    "description": "Small-Talk-Unbehagen",
     "weight": 1
   },
   {
     "id": 43,
-    "text": "Kommunikationsanpassung",
+    "text": "Kannst du deine Kommunikation an verschiedene Zielgruppen anpassen?",
+    "description": "Kommunikationsanpassung",
     "weight": 1.4
   },
   {
     "id": 44,
-    "text": "Diskussionsdominanz",
+    "text": "Neigst du dazu, in Diskussionen deine Meinung durchzusetzen?",
+    "description": "Diskussionsdominanz",
     "weight": 1.1
   },
   {
     "id": 45,
-    "text": "Tiefgründigkeit",
+    "text": "Bevorzugst du tiefgründige Gespräche gegenüber oberflächlichem Austausch?",
+    "description": "Tiefgründigkeit",
     "weight": 1.1
   },
   {
     "id": 46,
-    "text": "Informationsselektivität",
+    "text": "Teilst du persönliche Informationen nur mit Menschen, die du gut kennst?",
+    "description": "Informationsselektivität",
     "weight": 1
   },
   {
     "id": 47,
-    "text": "Humornutzung",
+    "text": "Nutzt du Humor oft, um soziale Situationen aufzulockern?",
+    "description": "Humornutzung",
     "weight": 0.9
   },
   {
     "id": 48,
-    "text": "Gruppengröße-Präferenz",
+    "text": "Fühlst du dich in großen Gruppen wohler als in Einzelgesprächen?",
+    "description": "Gruppengröße-Präferenz",
     "weight": 1
   },
   {
     "id": 49,
-    "text": "Stimmungswahrnehmung",
+    "text": "Bemerkt du schnell, wenn sich die Stimmung in einer Gruppe verändert?",
+    "description": "Stimmungswahrnehmung",
     "weight": 1.3
   },
   {
     "id": 50,
-    "text": "Feedback-Stil",
+    "text": "Bevorzugst du direkte Kritik statt diplomatischer Umschreibungen?",
+    "description": "Feedback-Stil",
     "weight": 1.2
   },
   {
     "id": 51,
-    "text": "Entscheidungsgeschwindigkeit/Intuition",
+    "text": "Triffst du Entscheidungen schnell und eher aus dem Bauch heraus?",
+    "description": "Entscheidungsgeschwindigkeit/Intuition",
     "weight": 1.2
   },
   {
     "id": 52,
-    "text": "Analytisches Entscheiden",
+    "text": "Analysierst du alle verfügbaren Informationen, bevor du entscheidest?",
+    "description": "Analytisches Entscheiden",
     "weight": 1.4
   },
   {
     "id": 53,
-    "text": "Beratungssuche",
+    "text": "Holst du gern Rat von anderen ein, bevor du wichtige Entscheidungen triffst?",
+    "description": "Beratungssuche",
     "weight": 1
   },
   {
     "id": 54,
-    "text": "Verantwortungsübernahme",
+    "text": "Übernimmst du Verantwortung für deine Entscheidungen, auch wenn sie falsch waren?",
+    "description": "Verantwortungsübernahme",
     "weight": 1.5
   },
   {
     "id": 55,
-    "text": "Entscheidungsreue",
+    "text": "Bereust du oft Entscheidungen und denkst darüber nach, was anders hätte laufen können?",
+    "description": "Entscheidungsreue",
     "weight": 1.1
   },
   {
     "id": 56,
-    "text": "Datenbasierte Entscheidungen",
+    "text": "Bevorzugst du datenbasierte und logische Entscheidungen?",
+    "description": "Datenbasierte Entscheidungen",
     "weight": 1.3
   },
   {
     "id": 57,
-    "text": "Werte-/Emotionsbasierte Entscheidungen",
+    "text": "Beziehst du Werte und Emotionen stark in deine Entscheidungen ein?",
+    "description": "Werte-/Emotionsbasierte Entscheidungen",
     "weight": 1.2
   },
   {
     "id": 58,
-    "text": "Risikobereitschaft",
+    "text": "Bist du risikobereit und probierst auch unkonventionelle Lösungen aus?",
+    "description": "Risikobereitschaft",
     "weight": 1.3
   },
   {
     "id": 59,
-    "text": "Sicherheitspräferenz",
+    "text": "Bevorzugst du bewährte und sichere Lösungen gegenüber riskanten Innovationen?",
+    "description": "Sicherheitspräferenz",
     "weight": 1.1
   },
   {
     "id": 60,
-    "text": "Unsicherheitstoleranz",
+    "text": "Kannst du unter Unsicherheit gut Entscheidungen treffen?",
+    "description": "Unsicherheitstoleranz",
     "weight": 1.4
   },
   {
     "id": 61,
-    "text": "Problemwahrnehmung",
+    "text": "Siehst du Probleme eher als Chancen denn als Hindernisse?",
+    "description": "Problemwahrnehmung",
     "weight": 1.2
   },
   {
     "id": 62,
-    "text": "Systematisches Denken",
+    "text": "Gehst du bei Problemen systematisch und Schritt für Schritt vor?",
+    "description": "Systematisches Denken",
     "weight": 1.3
   },
   {
     "id": 63,
-    "text": "Kreative Lösungen",
+    "text": "Entwickelst du kreative und unkonventionelle Lösungsansätze?",
+    "description": "Kreative Lösungen",
     "weight": 1.4
   },
   {
     "id": 64,
-    "text": "Aufgabehartnäckigkeit",
+    "text": "Gibst du schnell auf, wenn eine Lösung nicht sofort sichtbar ist?",
+    "description": "Aufgabehartnäckigkeit",
     "weight": 1.2
   },
   {
     "id": 65,
-    "text": "Expertensuchendes Verhalten",
+    "text": "Holst du externe Expertise ein, wenn du an deine Grenzen stößt?",
+    "description": "Expertensuchendes Verhalten",
     "weight": 1.1
   },
   {
     "id": 66,
-    "text": "Stressresilienz",
+    "text": "Bleibst du auch in stressigen Situationen ruhig und besonnen?",
+    "description": "Stressresilienz",
     "weight": 1.6
   },
   {
     "id": 67,
-    "text": "Emotionale Reaktivität (UMGEKEHRT für Stabilität)",
+    "text": "Reagierst du bei Stress emotional oder gereizt?",
+    "description": "Emotionale Reaktivität (UMGEKEHRT für Stabilität)",
     "weight": 1.4
   },
   {
     "id": 68,
-    "text": "Bewältigungsstrategien",
+    "text": "Hast du effektive Strategien, um mit Stress umzugehen?",
+    "description": "Bewältigungsstrategien",
     "weight": 1.5
   },
   {
     "id": 69,
-    "text": "Stressbeeinträchtigung (UMGEKEHRT)",
+    "text": "Wird deine Leistungsfähigkeit unter Stress stark beeinträchtigt?",
+    "description": "Stressbeeinträchtigung (UMGEKEHRT)",
     "weight": 1.3
   },
   {
     "id": 70,
-    "text": "Emotionale Kontrolle",
+    "text": "Kannst du deine Emotionen gut kontrollieren und nach außen eher verbergen?",
+    "description": "Emotionale Kontrolle",
     "weight": 1.3
   },
   {
     "id": 71,
-    "text": "Emotionale Offenheit",
+    "text": "Sprichst du offen über Gefühle und Sorgen?",
+    "description": "Emotionale Offenheit",
     "weight": 1.1
   },
   {
     "id": 72,
-    "text": "Erholungsfähigkeit",
+    "text": "Erholst du dich schnell von Rückschlägen und Enttäuschungen?",
+    "description": "Erholungsfähigkeit",
     "weight": 1.5
   },
   {
     "id": 73,
-    "text": "Sorgenneigung (UMGEKEHRT)",
+    "text": "Machst du dir oft Sorgen über zukünftige Ereignisse?",
+    "description": "Sorgenneigung (UMGEKEHRT)",
     "weight": 1.2
   },
   {
     "id": 74,
-    "text": "Aktive Stressbewältigung",
+    "text": "Nutzt du körperliche Aktivität oder Hobbys, um Stress abzubauen?",
+    "description": "Aktive Stressbewältigung",
     "weight": 1.3
   },
   {
     "id": 75,
-    "text": "Problemverdrängung (UMGEKEHRT)",
+    "text": "Neigst du dazu, Probleme zu verdrängen, statt sie aktiv anzugehen?",
+    "description": "Problemverdrängung (UMGEKEHRT)",
     "weight": 1.4
   },
   {
     "id": 76,
-    "text": "Führungsbereitschaft",
+    "text": "Übernimmst du gern die Führungsrolle in Gruppen?",
+    "description": "Führungsbereitschaft",
     "weight": 1.5
   },
   {
     "id": 77,
-    "text": "Follower-Präferenz (UMGEKEHRT für Führung)",
+    "text": "Befolgst du lieber Anweisungen, statt sie zu geben?",
+    "description": "Follower-Präferenz (UMGEKEHRT für Führung)",
     "weight": 1.2
   },
   {
     "id": 78,
-    "text": "Motivationsfähigkeit",
+    "text": "Kannst du andere motivieren und für Ideen begeistern?",
+    "description": "Motivationsfähigkeit",
     "weight": 1.4
   },
   {
     "id": 79,
-    "text": "Delegationsfähigkeit",
+    "text": "Delegierst du Aufgaben effektiv und vertraust deinem Team?",
+    "description": "Delegationsfähigkeit",
     "weight": 1.3
   },
   {
     "id": 80,
-    "text": "Kontrollbedürfnis (UMGEKEHRT für Delegation)",
+    "text": "Hast du Schwierigkeiten, Kontrolle abzugeben und zu delegieren?",
+    "description": "Kontrollbedürfnis (UMGEKEHRT für Delegation)",
     "weight": 1.2
   },
   {
     "id": 81,
-    "text": "Stärkenerkennung",
+    "text": "Erkennst du die Stärken einzelner Teammitglieder und setzt sie gezielt ein?",
+    "description": "Stärkenerkennung",
     "weight": 1.4
   },
   {
     "id": 82,
-    "text": "Feedback-Kompetenz",
+    "text": "Gibst du konstruktives Feedback und förderst die Entwicklung anderer?",
+    "description": "Feedback-Kompetenz",
     "weight": 1.5
   },
   {
     "id": 83,
-    "text": "Führung durch Vorbild",
+    "text": "Führst du eher durch Beispiel und Taten als durch Worte?",
+    "description": "Führung durch Vorbild",
     "weight": 1.3
   },
   {
     "id": 84,
-    "text": "Partizipative Führung",
+    "text": "Triffst du Entscheidungen demokratisch unter Einbeziehung des Teams?",
+    "description": "Partizipative Führung",
     "weight": 1.2
   },
   {
     "id": 85,
-    "text": "Entscheidungsstärke",
+    "text": "Kannst du auch unpopuläre Entscheidungen durchsetzen, wenn es nötig ist?",
+    "description": "Entscheidungsstärke",
     "weight": 1.4
   },
   {
     "id": 86,
-    "text": "Integrität",
+    "text": "Sind dir Ehrlichkeit und Integrität wichtiger als persönlicher Vorteil?",
+    "description": "Integrität",
     "weight": 1.6
   },
   {
     "id": 87,
-    "text": "Prinzipientreue",
+    "text": "Handelst du nach klaren moralischen Prinzipien, auch wenn es dir selbst schadet?",
+    "description": "Prinzipientreue",
     "weight": 1.4
   },
   {
     "id": 88,
-    "text": "Wertekompromissbereitschaft (UMGEKEHRT)",
+    "text": "Bist du bereit, bei deinen Werten Kompromisse zu machen, wenn es praktisch ist?",
+    "description": "Wertekompromissbereitschaft (UMGEKEHRT)",
     "weight": 1.3
   },
   {
     "id": 89,
-    "text": "Gerechtigkeitsorientierung",
+    "text": "Sind Gerechtigkeit und Fairness zentrale Werte für dich?",
+    "description": "Gerechtigkeitsorientierung",
     "weight": 1.4
   },
   {
     "id": 90,
-    "text": "Soziales/Ökologisches Engagement",
+    "text": "Engagierst du dich für soziale oder ökologische Anliegen?",
+    "description": "Soziales/Ökologisches Engagement",
     "weight": 1.2
   },
   {
     "id": 91,
-    "text": "Traditionsorientierung",
+    "text": "Sind Tradition und bestehende Normen dir wichtig?",
+    "description": "Traditionsorientierung",
     "weight": 1
   },
   {
     "id": 92,
-    "text": "Kritisches Hinterfragen",
+    "text": "Hinterfragst du bestehende Regeln und Strukturen kritisch?",
+    "description": "Kritisches Hinterfragen",
     "weight": 1.3
   },
   {
     "id": 93,
-    "text": "Diversitätsrespekt",
+    "text": "Respektierst du unterschiedliche Weltanschauungen und Lebensweisen?",
+    "description": "Diversitätsrespekt",
     "weight": 1.5
   },
   {
     "id": 94,
-    "text": "Loyalität",
+    "text": "Bist du loyal gegenüber Menschen und Organisationen, denen du angehörst?",
+    "description": "Loyalität",
     "weight": 1.2
   },
   {
     "id": 95,
-    "text": "Selbstpriorisierung",
+    "text": "Stellst du deine eigenen Bedürfnisse über die Erwartungen anderer?",
+    "description": "Selbstpriorisierung",
     "weight": 1.1
   },
   {
     "id": 96,
-    "text": "Anpassungsgeschwindigkeit",
+    "text": "Passt du dich schnell an neue Situationen und Umgebungen an?",
+    "description": "Anpassungsgeschwindigkeit",
     "weight": 1.5
   },
   {
     "id": 97,
-    "text": "Veränderungsangst (UMGEKEHRT)",
+    "text": "Machen dir Veränderungen Angst und bevorzugst du Stabilität?",
+    "description": "Veränderungsangst (UMGEKEHRT)",
     "weight": 1.3
   },
   {
     "id": 98,
-    "text": "Entwicklungsorientierung",
+    "text": "Siehst du Veränderungen als Gelegenheit zur persönlichen Entwicklung?",
+    "description": "Entwicklungsorientierung",
     "weight": 1.4
   },
   {
     "id": 99,
-    "text": "Planflexibilität",
+    "text": "Bleibst du flexibel und kannst deine Pläne spontan anpassen?",
+    "description": "Planflexibilität",
     "weight": 1.3
   },
   {
     "id": 100,
-    "text": "Anpassungszeit",
+    "text": "Brauchst du Zeit, um dich an neue Situationen zu gewöhnen?",
+    "description": "Anpassungszeit",
     "weight": 1.2
   }
 ]

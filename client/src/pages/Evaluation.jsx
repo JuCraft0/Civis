@@ -104,7 +104,8 @@ const Evaluation = () => {
 
             {currentQuestions.map(q => (
               <div key={q.id} className="bg-slate-800/30 border border-slate-700/50 rounded-xl p-5 transition-all hover:border-slate-600/50">
-                <p className="text-slate-200 text-lg mb-4">{q.id}. {q.text}</p>
+                <p className="text-slate-200 text-lg mb-1">F{q.id}: {q.text}</p>
+                <p className="text-slate-500 text-xs mb-4 uppercase tracking-wider">{q.description}</p>
                 <div className="flex items-center justify-between gap-2 sm:gap-4">
                   <span className="text-xs text-slate-500 uppercase tracking-wider hidden sm:block">Trifft nicht zu</span>
                   <div className="flex gap-2 flex-1 justify-between sm:justify-center">
