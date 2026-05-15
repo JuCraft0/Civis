@@ -540,67 +540,25 @@ router.post('/search-by-face', authenticateToken, upload.single('photo'), async 
         candidates.sort((a, b) => a.stage1Distance - b.stage1Distance);
         const topCandidates = candidates.slice(0, 8);
 
-        // ── Stage 2: Precise verification against multiple photos ──────────────
+        // ── Stage 2: Fast matching using pre-calculated embeddings ──────────────
         const matches = [];
         for (const candidate of topCandidates) {
             try {
-                // Load up to 3 local photos and 5 Immich faces to increase detection robustness
-                const { rows: localPhotos } = await pool.query(
-                    'SELECT photo_data FROM person_photos WHERE person_id = $1 ORDER BY id ASC LIMIT 3',
-                    [candidate.id]
-                );
-
-                const { rows: immichPhotos } = await pool.query(
-                    'SELECT photo_data FROM immich_faces WHERE person_id = $1 ORDER BY id ASC LIMIT 5',
-                    [candidate.id]
-                );
-
-                const photos = [...localPhotos, ...immichPhotos];
-
-                if (photos.length === 0) {
-                    continue;
-                }
-
-                // Parallelize testing against multiple photos for this candidate
-                const verificationPromises = photos.map(async (photo) => {
-                    try {
-                        return await verifyFaces(req.file.buffer, photo.photo_data);
-                    } catch (innerErr) {
-                        return null;
-                    }
-                });
-
-                const results = await Promise.all(verificationPromises);
-                
-                let bestVerifyResult = null;
-                let minDistance = Infinity;
-
-                for (const verifyResult of results) {
-                    if (verifyResult && verifyResult.distance < minDistance) {
-                        minDistance = verifyResult.distance;
-                        bestVerifyResult = verifyResult;
-                    }
-                }
-
-                if (bestVerifyResult) {
-                    console.log(`[Stage 2] ${candidate.name} (ID: ${candidate.id}) - Best Distance: ${minDistance.toFixed(4)}`);
-                }
-
                 // Thresholds:
                 // < 0.40: Very likely match (Verified)
                 // 0.40 - 0.55: Potential match (Show in UI)
-                if (bestVerifyResult && minDistance < 0.55) {
+                if (candidate.stage1Distance < 0.55) {
                     const fullPerson = await getFullPerson(candidate.id);
                     matches.push({
                         person: fullPerson,
-                        distance: minDistance,
+                        distance: candidate.stage1Distance,
                         stage1Distance: candidate.stage1Distance,
-                        verified: minDistance < 0.40,
-                        is_near_match: minDistance >= 0.40 && minDistance < 0.55
+                        verified: candidate.stage1Distance < 0.40,
+                        is_near_match: candidate.stage1Distance >= 0.40 && candidate.stage1Distance < 0.55
                     });
                 }
             } catch (e) {
-                console.error(`[Stage 2] Error verifying candidate ${candidate.id}:`, e.message);
+                console.error(`Error processing candidate ${candidate.id}:`, e.message);
             }
         }
 

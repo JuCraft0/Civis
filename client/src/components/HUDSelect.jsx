@@ -55,7 +55,7 @@ const HUDSelect = ({
     return (
         <div className="space-y-2" ref={containerRef}>
             {label && <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-2 px-1">{label}</label>}
-            <div className="relative focus-within:z-20">
+            <div className={`relative ${isOpen ? 'z-50' : 'focus-within:z-20'}`}>
                 <div
                     onClick={() => setIsOpen(!isOpen)}
                     className={`

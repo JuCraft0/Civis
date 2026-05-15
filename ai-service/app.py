@@ -23,10 +23,18 @@ except Exception as e:
     # We'll try to re-init on first request if this fails due to download issues etc.
     face_app = None
 
-def bytes_to_cv2(file_bytes: bytes):
-    """Convert bytes to a BGR image array for InsightFace/OpenCV."""
+def bytes_to_cv2(file_bytes: bytes, max_size=1024):
+    """Convert bytes to a BGR image array for InsightFace/OpenCV, downscaling if too large."""
     nparr = np.frombuffer(file_bytes, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    if img is not None:
+        h, w = img.shape[:2]
+        if max(h, w) > max_size:
+            scale = max_size / max(h, w)
+            new_w, new_h = int(w * scale), int(h * scale)
+            img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_AREA)
+            
     return img
 
 @app.get("/health")
