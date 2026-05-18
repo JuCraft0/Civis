@@ -9,10 +9,17 @@ const HUDMultiSelect = ({
     onChange,
     icon: Icon,
     placeholder = "AUSWÄHLEN...",
-    color = "blue"
+    color = "blue",
+    onOpenChange
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
+
+    useEffect(() => {
+        if (onOpenChange) {
+            onOpenChange(isOpen);
+        }
+    }, [isOpen, onOpenChange]);
 
     const colorClasses = {
         blue: { activeText: "text-blue-400", activeBg: "hover:bg-blue-500/10", accent: "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" },

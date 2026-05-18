@@ -9,10 +9,17 @@ const HUDSelect = ({
     onChange,
     icon: Icon,
     placeholder = "AUSWÄHLEN...",
-    color = "blue" // blue, orange, purple
+    color = "blue", // blue, orange, purple
+    onOpenChange
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const containerRef = useRef(null);
+
+    useEffect(() => {
+        if (onOpenChange) {
+            onOpenChange(isOpen);
+        }
+    }, [isOpen, onOpenChange]);
 
     const selectedOption = options.find(opt => opt.value === value);
 
