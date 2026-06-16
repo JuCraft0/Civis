@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 
 const HUDSelect = ({
     label,
@@ -13,11 +13,15 @@ const HUDSelect = ({
     onOpenChange
 }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
     const containerRef = useRef(null);
 
     useEffect(() => {
         if (onOpenChange) {
             onOpenChange(isOpen);
+        }
+        if (!isOpen) {
+            setSearchTerm('');
         }
     }, [isOpen, onOpenChange]);
 
@@ -59,6 +63,10 @@ const HUDSelect = ({
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    const filteredOptions = options.filter(opt => 
+        opt.label.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     return (
         <div className="space-y-2" ref={containerRef}>
             {label && <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-2 px-1">{label}</label>}
@@ -88,10 +96,24 @@ const HUDSelect = ({
                             initial={{ opacity: 0, y: 10, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                            className="absolute z-[9999] w-full mt-3 glass-panel rounded-2xl shadow-3xl overflow-hidden border border-white/10"
+                            className="absolute z-[9999] w-full mt-3 glass-panel rounded-2xl shadow-3xl overflow-hidden border border-white/10 flex flex-col"
                         >
-                            <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5">
-                                {options.length > 0 ? options.map((opt) => (
+                            <div className="p-2 border-b border-white/5">
+                                <div className="relative">
+                                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        placeholder="SUCHEN..."
+                                        className="w-full bg-black/20 rounded-xl pl-9 pr-3 py-2 text-white text-[10px] font-mono uppercase tracking-wider focus:outline-none focus:bg-black/40 border border-transparent focus:border-white/10 transition-colors"
+                                        onClick={(e) => e.stopPropagation()}
+                                    />
+                                </div>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto custom-scrollbar p-1.5 flex-1">
+                                {filteredOptions.length > 0 ? filteredOptions.map((opt) => (
                                     <div
                                         key={opt.value}
                                         onClick={() => {
@@ -116,7 +138,7 @@ const HUDSelect = ({
                                     </div>
                                 )) : (
                                     <div className="p-6 text-center text-gray-600 font-mono text-[10px] uppercase tracking-widest italic">
-                                        Keine Optionen verfügbar
+                                        Keine Optionen gefunden
                                     </div>
                                 )}
                             </div>

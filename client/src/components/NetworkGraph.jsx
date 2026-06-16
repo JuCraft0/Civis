@@ -51,8 +51,8 @@ const NetworkGraph = ({ data }) => {
     // Effect to adjust physics forces
     useEffect(() => {
         if (fgRef.current) {
-            fgRef.current.d3Force('charge').strength(-250);
-            fgRef.current.d3Force('link').distance(45);
+            fgRef.current.d3Force('charge').strength(-800);
+            fgRef.current.d3Force('link').distance(100);
         }
     }, [data]);
 

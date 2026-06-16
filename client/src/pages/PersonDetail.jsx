@@ -455,7 +455,7 @@ const PersonDetail = () => {
         },
         {
             id: 'clusters',
-            label: 'Clusters / Designations',
+            label: 'Group',
             icon: FolderTree,
             color: 'orange',
             fullWidth: true,
@@ -480,7 +480,7 @@ const PersonDetail = () => {
         },
         {
             id: 'family',
-            label: 'Genetic Network / Family',
+            label: 'Family',
             icon: Users,
             color: 'green',
             fullWidth: true,
@@ -609,7 +609,7 @@ const PersonDetail = () => {
         },
         {
             id: 'ai_analysis',
-            label: 'Intelligence / AI Analysis',
+            label: 'AI Analysis',
             icon: Brain,
             color: 'purple',
             fullWidth: false,
@@ -688,7 +688,7 @@ const PersonDetail = () => {
         },
         {
             id: 'immich_faces',
-            label: 'Immich Collection',
+            label: 'Immich Images',
             icon: ImageIcon,
             color: 'cyan',
             fullWidth: true,
@@ -697,7 +697,7 @@ const PersonDetail = () => {
         },
         {
             id: 'evaluations',
-            label: 'Psych-Evaluation Profile',
+            label: 'Evaluations',
             icon: Brain,
             color: 'blue',
             fullWidth: true,

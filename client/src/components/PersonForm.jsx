@@ -332,19 +332,19 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
     const moduleCategories = {
         'Allgemein': [
             { id: 'photo', label: 'Foto', icon: ImageIcon },
-            { id: 'age', label: 'Alter (Geburtsdatum)', icon: CalendarIcon },
-            { id: 'gender', label: 'Geschlecht', icon: Users },
+            { id: 'age', label: 'Age', icon: CalendarIcon },
+            { id: 'gender', label: 'Gender', icon: Users },
             { id: 'aliases', label: 'Alias', icon: Users },
-            { id: 'location', label: 'Wohnort', icon: Users },
-            { id: 'additional_info', label: 'Zusätzliche Infos', icon: Plus }
+            { id: 'location', label: 'Sector / Residence', icon: Users },
+            { id: 'additional_info', label: 'Notes', icon: Plus }
         ],
         'Verbindungen': [
-            { id: 'group_id', label: 'Cluster / Gruppen', icon: FolderTree },
-            { id: 'family', label: 'Familie', icon: Users },
-            { id: 'partners', label: 'Beziehung/Partner', icon: Users },
-            { id: 'social', label: 'Soziales Umfeld', icon: Users },
-            { id: 'online_profiles', label: 'Online-Profile', icon: Globe },
-            { id: 'immich_person_id', label: 'Immich Integration', icon: Scan }
+            { id: 'group_id', label: 'Group', icon: FolderTree },
+            { id: 'family', label: 'Family', icon: Users },
+            { id: 'partners', label: 'Partners', icon: Users },
+            { id: 'social', label: 'Social', icon: Users },
+            { id: 'online_profiles', label: 'Profiles', icon: Globe },
+            { id: 'immich_person_id', label: 'Immich Images', icon: Scan }
         ]
     };
 
@@ -822,7 +822,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             >
                                 {renderRemoveButton('age')}
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] px-1">Geburtsdatum</label>
+                                    <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] px-1">Age</label>
                                     <div className="relative group">
                                         <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size={16} />
                                         <input
@@ -850,7 +850,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${openDropdown === 'gender' ? 'z-50' : 'z-0 focus-within:z-40'} group pt-4 space-y-4`}>
                                 {renderRemoveButton('gender')}
                                 <HUDSelect
-                                    label="Physisches Geschlecht"
+                                    label="Gender"
                                     icon={Users}
                                     value={showCustomGender || !['Männlich', 'Weiblich', 'Non-Binary', ''].includes(formData.gender) ? 'Anderes' : formData.gender}
                                     onChange={(val) => {
@@ -891,7 +891,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         {activeModules.includes('aliases') && (
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-40 group pt-4">
                                 {renderRemoveButton('aliases')}
-                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Alias / Codenamen</label>
+                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Alias</label>
                                 <div className="relative group">
                                     <input
                                         type="text"
@@ -908,7 +908,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         {activeModules.includes('location') && (
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${showAddressSuggestions && addressSuggestions.length > 0 ? 'z-50' : 'z-0 focus-within:z-40'} group pt-4`}>
                                 {renderRemoveButton('location')}
-                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Primärer Aufenthaltsort</label>
+                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Sector / Residence</label>
                                 <div className="relative group">
                                     <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors z-10" size={18} />
                                     <input
@@ -958,7 +958,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${openDropdown === 'group_id' ? 'z-50' : 'z-0 focus-within:z-40'} group pt-6`}>
                                 {renderRemoveButton('group_id')}
                                 <HUDMultiSelect
-                                    label="Cluster (Mehrfachauswahl möglich)"
+                                    label="Group"
                                     value={formData.group_ids}
                                     onChange={(vals) => setFormData({ ...formData, group_ids: vals })}
                                     options={groups.map(g => ({ value: g.id, label: g.name }))}
@@ -974,7 +974,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${showSuggestions.family && searchQuery.family ? 'z-50' : 'z-0 focus-within:z-40'} group pt-6`}>
                                 {renderRemoveButton('family')}
                                 <RelationSection
-                                    label="Blutsverwandtschaft & Familie"
+                                    label="Family"
                                     type="family"
                                     search={searchQuery.family}
                                     setSearch={(val) => setSearchQuery(p => ({ ...p, family: val }))}
@@ -998,7 +998,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${showSuggestions.partners && searchQuery.partners ? 'z-50' : 'z-0 focus-within:z-40'} group pt-6`}>
                                 {renderRemoveButton('partners')}
                                 <RelationSection
-                                    label="Romantische Beziehungen"
+                                    label="Partners"
                                     type="partners"
                                     search={searchQuery.partners}
                                     setSearch={(val) => setSearchQuery(p => ({ ...p, partners: val }))}
@@ -1022,7 +1022,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${showSuggestions.social && searchQuery.social ? 'z-50' : 'z-0 focus-within:z-40'} group pt-6`}>
                                 {renderRemoveButton('social')}
                                 <RelationSection
-                                    label="Soziale Netzwerk-Verknüpfungen"
+                                    label="Social"
                                     type="social"
                                     search={searchQuery.social}
                                     setSearch={(val) => setSearchQuery(p => ({ ...p, social: val }))}
@@ -1045,7 +1045,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         {activeModules.includes('online_profiles') && (
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className={`relative ${openDropdown === 'online_profiles' ? 'z-50' : 'z-0 focus-within:z-40'} group pt-6 space-y-6`}>
                                 {renderRemoveButton('online_profiles')}
-                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block px-1">Digital Footprint / Online-Profile</label>
+                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block px-1">Profiles</label>
 
                                 {/* Existing profiles */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1163,7 +1163,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         {activeModules.includes('immich_person_id') && (
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-40 group pt-6 space-y-4">
                                 {renderRemoveButton('immich_person_id')}
-                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block px-1">Immich Cloud Integration</label>
+                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block px-1">Immich Images</label>
                                 <div className="flex gap-4">
                                     <div className="flex-1 relative">
                                         <Scan size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
@@ -1202,7 +1202,7 @@ const PersonForm = ({ initialData, onSubmit, onCancel, autoFocusField = null }) 
                         {activeModules.includes('additional_info') && (
                             <motion.div layout initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0, overflow: 'hidden' }} className="relative z-0 focus-within:z-40 group pt-6">
                                 {renderRemoveButton('additional_info')}
-                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Erweiterte Informationen / Dossier</label>
+                                <label className="text-[10px] font-mono text-gray-500 uppercase tracking-[0.2em] block mb-3 px-1">Notes</label>
                                 <textarea
                                     name="additional_info"
                                     value={formData.additional_info}
